@@ -27,6 +27,7 @@ import java.util.Map.Entry;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.DefaultListModel;
+import javax.swing.JFileChooser;
 
 /**
  *
@@ -62,7 +63,11 @@ public class Frame extends javax.swing.JFrame {
     DefaultListModel<NodeLine> modelServices = new DefaultListModel<>();
     listServices.setModel(modelServices);
 
-    dataOwner.remoteSummaries.subscribe((Change<String, String> change) -> {
+    dataOwner.localData.subscribeWithGet(data -> {
+      taPostedData.setText("" + data);
+    });
+    
+    dataOwner.remoteSummaries.subscribeWithGet((Change<String, String> change) -> {
       //TODO Make efficient
       modelServices.clear();
       for (Entry<String, String> entry : dataOwner.remoteSummaries.get().entrySet()) {
@@ -109,10 +114,13 @@ public class Frame extends javax.swing.JFrame {
       }
     });
 
-    this.setDropTarget(new DropTarget() {
+    DropTarget dt = new DropTarget() {
       //TODO Might be nice to hint acceptance
       
       public synchronized void drop(DropTargetDropEvent evt) {
+        if (cbLoopClipboard.isSelected()) {
+          return;
+        }
         if (evt.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
           evt.acceptDrop(DnDConstants.ACTION_COPY);
         } else {
@@ -127,7 +135,31 @@ public class Frame extends javax.swing.JFrame {
           ex.printStackTrace();
         }
       }
+    };
+    
+    // This segment is weird.  Something funky going on.  If you change it, things break.
+    taPostedData.setDropTarget(dt);
+    taLoadedData.setDropTarget(dt);
+    this.setDropTarget(dt);
+    
+    Thread t = new Thread(() -> {
+      while (true) {
+        if (cbLoopClipboard.isSelected()) {
+          try {
+            dataOwner.localData.set(new TextData((String) Toolkit.getDefaultToolkit().getSystemClipboard().getData(DataFlavor.stringFlavor)));
+          } catch (Throwable ex) {
+            Logger.getLogger(Frame.class.getName()).log(Level.SEVERE, null, ex);
+          }
+        }
+        try {
+          Thread.sleep(1000);
+        } catch (InterruptedException ex) {
+          Logger.getLogger(Frame.class.getName()).log(Level.SEVERE, null, ex);
+        }
+      }
     });
+    t.setDaemon(true);
+    t.start();    
   }
 
   /**
@@ -142,38 +174,128 @@ public class Frame extends javax.swing.JFrame {
     jSplitPane1 = new javax.swing.JSplitPane();
     jPanel1 = new javax.swing.JPanel();
     jScrollPane2 = new javax.swing.JScrollPane();
-    taData = new javax.swing.JTextArea();
+    taPostedData = new javax.swing.JTextArea();
+    btnSendClipboard = new javax.swing.JButton();
+    cbLoopClipboard = new javax.swing.JCheckBox();
+    btnPostFiles = new javax.swing.JButton();
+    jLabel3 = new javax.swing.JLabel();
+    jSplitPane3 = new javax.swing.JSplitPane();
+    jPanel3 = new javax.swing.JPanel();
+    jScrollPane4 = new javax.swing.JScrollPane();
+    taLoadedData = new javax.swing.JTextArea();
+    jLabel2 = new javax.swing.JLabel();
     jPanel2 = new javax.swing.JPanel();
     jScrollPane1 = new javax.swing.JScrollPane();
     listServices = new javax.swing.JList<>();
-    btnSendClipboard = new javax.swing.JButton();
+    jLabel1 = new javax.swing.JLabel();
 
     setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
+    jSplitPane1.setDividerLocation(150);
     jSplitPane1.setOrientation(javax.swing.JSplitPane.VERTICAL_SPLIT);
 
-    taData.setColumns(20);
-    taData.setRows(5);
-    jScrollPane2.setViewportView(taData);
+    taPostedData.setEditable(false);
+    taPostedData.setColumns(20);
+    taPostedData.setRows(5);
+    jScrollPane2.setViewportView(taPostedData);
+
+    btnSendClipboard.setText("Post clipboard");
+    btnSendClipboard.addActionListener(new java.awt.event.ActionListener() {
+      public void actionPerformed(java.awt.event.ActionEvent evt) {
+        btnSendClipboardActionPerformed(evt);
+      }
+    });
+
+    cbLoopClipboard.setText("Loop clipboard");
+    cbLoopClipboard.setToolTipText("Continually (1Hz) broadcast clipboard");
+    cbLoopClipboard.addChangeListener(new javax.swing.event.ChangeListener() {
+      public void stateChanged(javax.swing.event.ChangeEvent evt) {
+        cbLoopClipboardStateChanged(evt);
+      }
+    });
+
+    btnPostFiles.setText("Post files...");
+    btnPostFiles.addActionListener(new java.awt.event.ActionListener() {
+      public void actionPerformed(java.awt.event.ActionEvent evt) {
+        btnPostFilesActionPerformed(evt);
+      }
+    });
+
+    jLabel3.setText("Currently posted:");
 
     javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
     jPanel1.setLayout(jPanel1Layout);
     jPanel1Layout.setHorizontalGroup(
       jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-      .addGroup(jPanel1Layout.createSequentialGroup()
+      .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
         .addContainerGap()
-        .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 656, Short.MAX_VALUE)
+        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+          .addComponent(btnSendClipboard)
+          .addComponent(btnPostFiles)
+          .addComponent(cbLoopClipboard))
+        .addGap(25, 25, 25)
+        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+          .addGroup(jPanel1Layout.createSequentialGroup()
+            .addComponent(jLabel3)
+            .addGap(0, 0, Short.MAX_VALUE))
+          .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 592, Short.MAX_VALUE))
         .addContainerGap())
     );
     jPanel1Layout.setVerticalGroup(
       jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
       .addGroup(jPanel1Layout.createSequentialGroup()
         .addContainerGap()
-        .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 76, Short.MAX_VALUE)
+        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+          .addGroup(jPanel1Layout.createSequentialGroup()
+            .addComponent(cbLoopClipboard)
+            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+            .addComponent(btnSendClipboard)
+            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+            .addComponent(btnPostFiles)
+            .addGap(0, 0, Short.MAX_VALUE))
+          .addGroup(jPanel1Layout.createSequentialGroup()
+            .addComponent(jLabel3)
+            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+            .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 101, Short.MAX_VALUE)))
         .addContainerGap())
     );
 
     jSplitPane1.setTopComponent(jPanel1);
+
+    jSplitPane3.setDividerLocation(300);
+    jSplitPane3.setOrientation(javax.swing.JSplitPane.VERTICAL_SPLIT);
+
+    taLoadedData.setEditable(false);
+    taLoadedData.setColumns(20);
+    taLoadedData.setRows(5);
+    jScrollPane4.setViewportView(taLoadedData);
+
+    jLabel2.setText("Loaded:");
+
+    javax.swing.GroupLayout jPanel3Layout = new javax.swing.GroupLayout(jPanel3);
+    jPanel3.setLayout(jPanel3Layout);
+    jPanel3Layout.setHorizontalGroup(
+      jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+      .addGroup(jPanel3Layout.createSequentialGroup()
+        .addContainerGap()
+        .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+          .addComponent(jScrollPane4, javax.swing.GroupLayout.DEFAULT_SIZE, 739, Short.MAX_VALUE)
+          .addGroup(jPanel3Layout.createSequentialGroup()
+            .addComponent(jLabel2)
+            .addGap(0, 0, Short.MAX_VALUE)))
+        .addContainerGap())
+    );
+    jPanel3Layout.setVerticalGroup(
+      jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+      .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel3Layout.createSequentialGroup()
+        .addContainerGap()
+        .addComponent(jLabel2)
+        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+        .addComponent(jScrollPane4, javax.swing.GroupLayout.DEFAULT_SIZE, 115, Short.MAX_VALUE)
+        .addContainerGap())
+    );
+
+    jSplitPane3.setRightComponent(jPanel3);
 
     listServices.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
     listServices.setToolTipText("Double click to copy from highlighted node");
@@ -184,12 +306,8 @@ public class Frame extends javax.swing.JFrame {
     });
     jScrollPane1.setViewportView(listServices);
 
-    btnSendClipboard.setText("Send clipboard");
-    btnSendClipboard.addActionListener(new java.awt.event.ActionListener() {
-      public void actionPerformed(java.awt.event.ActionEvent evt) {
-        btnSendClipboardActionPerformed(evt);
-      }
-    });
+    jLabel1.setFont(new java.awt.Font("Cantarell", 1, 15)); // NOI18N
+    jLabel1.setText("Connected nodes");
 
     javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
     jPanel2.setLayout(jPanel2Layout);
@@ -197,24 +315,26 @@ public class Frame extends javax.swing.JFrame {
       jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
       .addGroup(jPanel2Layout.createSequentialGroup()
         .addContainerGap()
-        .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 537, Short.MAX_VALUE)
-        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-        .addComponent(btnSendClipboard)
+        .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+          .addComponent(jScrollPane1)
+          .addGroup(jPanel2Layout.createSequentialGroup()
+            .addComponent(jLabel1)
+            .addGap(0, 621, Short.MAX_VALUE)))
         .addContainerGap())
     );
     jPanel2Layout.setVerticalGroup(
       jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-      .addGroup(jPanel2Layout.createSequentialGroup()
+      .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel2Layout.createSequentialGroup()
         .addContainerGap()
-        .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-          .addGroup(jPanel2Layout.createSequentialGroup()
-            .addComponent(btnSendClipboard)
-            .addGap(0, 0, Short.MAX_VALUE))
-          .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 330, Short.MAX_VALUE))
+        .addComponent(jLabel1)
+        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+        .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 251, Short.MAX_VALUE)
         .addContainerGap())
     );
 
-    jSplitPane1.setRightComponent(jPanel2);
+    jSplitPane3.setLeftComponent(jPanel2);
+
+    jSplitPane1.setRightComponent(jSplitPane3);
 
     javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
     getContentPane().setLayout(layout);
@@ -246,6 +366,21 @@ public class Frame extends javax.swing.JFrame {
     }
   }//GEN-LAST:event_btnSendClipboardActionPerformed
 
+  public final JFileChooser fileChooser = new JFileChooser();
+  
+  private void btnPostFilesActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnPostFilesActionPerformed
+    fileChooser.setMultiSelectionEnabled(true);
+    if (fileChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+      dataOwner.localData.set(new FilesData(fileChooser.getSelectedFiles()));
+    }
+  }//GEN-LAST:event_btnPostFilesActionPerformed
+
+  private void cbLoopClipboardStateChanged(javax.swing.event.ChangeEvent evt) {//GEN-FIRST:event_cbLoopClipboardStateChanged
+    boolean looping = cbLoopClipboard.isSelected();
+    btnPostFiles.setEnabled(!looping);
+    btnSendClipboard.setEnabled(!looping);
+  }//GEN-LAST:event_cbLoopClipboardStateChanged
+
   private void pullFromNode() {
     NodeLine nl = listServices.getSelectedValue();
     if (nl != null) {
@@ -254,22 +389,24 @@ public class Frame extends javax.swing.JFrame {
         //System.out.println("rx data: " + data);
         System.err.println("//TODO Handle binary data");
         if (data instanceof TextData) {
-          taData.setText(((TextData) data).text);
+          taLoadedData.setText(((TextData) data).text);
           Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(((TextData) data).text), null);
         } else if (data instanceof ErrorData) {
-          taData.setText(((ErrorData) data).text);
+          taLoadedData.setText(((ErrorData) data).text);
           Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(((ErrorData) data).text), null);
         } else if (data instanceof BinaryData) {
           throw new RuntimeException("Unhandled data type: binary");
         } else if (data instanceof FilesData) {
-          taData.setText(((FilesData) data).toString());
+          taLoadedData.setText(((FilesData) data).toString());
           System.err.println("//TODO Copy file locations?");
           //Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(((ErrorData) data).text), null);
           //System.err.println("//TODO Save files");
+        } else {
+          throw new RuntimeException("Unhandled data type");
         }
       } catch (IOException ex) {
         Logger.getLogger(Frame.class.getName()).log(Level.SEVERE, null, ex);
-        taData.setText("ERROR: " + ex.getMessage());
+        taLoadedData.setText("ERROR: " + ex.getMessage());
       }
     }
   }
@@ -280,23 +417,6 @@ public class Frame extends javax.swing.JFrame {
   public static void main(String args[]) {
     final DataOwner dataOwner = new DataOwner();
     final JmDNSProcess jdp = JmDNSProcess.start(dataOwner);
-
-//    Thread t = new Thread(() -> {
-//      while (true) {
-//        try {
-//          dataOwner.localData.set(new TextData((String) Toolkit.getDefaultToolkit().getSystemClipboard().getData(DataFlavor.stringFlavor)));
-//        } catch (Throwable ex) {
-//          Logger.getLogger(Frame.class.getName()).log(Level.SEVERE, null, ex);
-//        }
-//        try {
-//          Thread.sleep(1000);
-//        } catch (InterruptedException ex) {
-//          Logger.getLogger(Frame.class.getName()).log(Level.SEVERE, null, ex);
-//        }
-//      }
-//    });
-//    t.setDaemon(true);
-//    t.start();
 
 //    /* Set the Nimbus look and feel */
 //    
@@ -330,13 +450,22 @@ public class Frame extends javax.swing.JFrame {
   }
 
   // Variables declaration - do not modify//GEN-BEGIN:variables
+  private javax.swing.JButton btnPostFiles;
   private javax.swing.JButton btnSendClipboard;
+  private javax.swing.JCheckBox cbLoopClipboard;
+  private javax.swing.JLabel jLabel1;
+  private javax.swing.JLabel jLabel2;
+  private javax.swing.JLabel jLabel3;
   private javax.swing.JPanel jPanel1;
   private javax.swing.JPanel jPanel2;
+  private javax.swing.JPanel jPanel3;
   private javax.swing.JScrollPane jScrollPane1;
   private javax.swing.JScrollPane jScrollPane2;
+  private javax.swing.JScrollPane jScrollPane4;
   private javax.swing.JSplitPane jSplitPane1;
+  private javax.swing.JSplitPane jSplitPane3;
   private javax.swing.JList<NodeLine> listServices;
-  private javax.swing.JTextArea taData;
+  private javax.swing.JTextArea taLoadedData;
+  private javax.swing.JTextArea taPostedData;
   // End of variables declaration//GEN-END:variables
 }

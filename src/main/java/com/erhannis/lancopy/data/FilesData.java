@@ -22,8 +22,10 @@ import java.io.InputStream;
 import java.io.SequenceInputStream;
 import java.nio.charset.Charset;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.LinkedList;
+import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JFileChooser;
@@ -44,6 +46,19 @@ public class FilesData extends Data {
     this.files = files;
   }
 
+  @Override
+  public boolean equals(Object obj) {
+    if (obj == null || !(obj instanceof FilesData)) {
+      return false;
+    }
+    return Objects.deepEquals(this.files, ((FilesData)obj).files);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash("FilesData", Arrays.hashCode(files));
+  }
+  
   @Override
   public String getMime() {
     return "lancopy/files";

@@ -10,6 +10,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
+import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -24,6 +25,19 @@ public class TextData extends Data {
 
   public TextData(String text) {
     this.text = text;
+  }
+  
+  @Override
+  public boolean equals(Object obj) {
+    if (obj == null || !(obj instanceof TextData)) {
+      return false;
+    }
+    return Objects.equals(this.text, ((TextData)obj).text);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash("TextData", text);
   }
   
   @Override

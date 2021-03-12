@@ -86,14 +86,14 @@ public class JmDNSProcess {
 
     Spark.port(0);
 
-    try {
-      //TODO //SECURITY Change according to settings
-      dataOwner.localData.set(new TextData((String) Toolkit.getDefaultToolkit().getSystemClipboard().getData(DataFlavor.stringFlavor)));
-    } catch (UnsupportedFlavorException ex) {
-      Logger.getLogger(JmDNSProcess.class.getName()).log(Level.SEVERE, null, ex);
-    } catch (IOException ex) {
-      Logger.getLogger(JmDNSProcess.class.getName()).log(Level.SEVERE, null, ex);
-    }
+//    try {
+//      //TODO //SECURITY Change according to settings
+//      dataOwner.localData.set(new TextData((String) Toolkit.getDefaultToolkit().getSystemClipboard().getData(DataFlavor.stringFlavor)));
+//    } catch (UnsupportedFlavorException ex) {
+//      Logger.getLogger(JmDNSProcess.class.getName()).log(Level.SEVERE, null, ex);
+//    } catch (IOException ex) {
+//      Logger.getLogger(JmDNSProcess.class.getName()).log(Level.SEVERE, null, ex);
+//    }
 
     Spark.webSocket("/monitor", wsServer);
     Spark.get("/data", (request, response) -> { //TODO //SECURITY Note - this DOES mean your clipboard is always accessible by anyone.  OTOH, this is be design, until we have some form of authentication.
