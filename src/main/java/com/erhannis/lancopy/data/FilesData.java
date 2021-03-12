@@ -70,7 +70,7 @@ public class FilesData extends Data {
 
   @Override
   public InputStream serialize() {
-    if (files.length == 1) {
+    if (files.length == 1 && !files[0].isDirectory()) {
       try {
         // This is a little cluttered
         byte[] filenameBytes = files[0].getName().getBytes(UTF8);
@@ -154,6 +154,7 @@ public class FilesData extends Data {
         FileUtils.copyInputStreamToFile(stream, f);
         files[i] = f;
       }
+      System.out.println("Done deserializing files");
       return new FilesData(files);
     } catch (Throwable t) {
       Logger.getLogger(FilesData.class.getName()).log(Level.SEVERE, null, t);
