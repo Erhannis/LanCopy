@@ -59,6 +59,8 @@ public class JmDNSProcess {
   private final WsServer wsServer;
   private final WsClient wsClient;
 
+  private final JmDNS jmdns;
+  
   private JmDNSProcess(DataOwner dataOwner) {
     this.dataOwner = dataOwner;
     this.wsServer = new WsServer(dataOwner);
@@ -97,13 +99,20 @@ public class JmDNSProcess {
         dataOwner.remoteSummaries.remove(change.key);
       }
     });
-   
-    new Thread(() -> {
-      listen();
-    }).start();
-    new Thread(() -> {
-      broadcast();
-    }).start();
+
+    JmDNS jmdns0 = null;
+    try {
+      // Create a JmDNS instance
+      jmdns0 = JmDNS.create(InetAddress.getLocalHost());
+
+      ServiceInfo serviceInfo = ServiceInfo.create("_lancopy._tcp.local.", "LanCopy-" + ID.toString(), PORT, "path=string");
+      jmdns0.registerService(serviceInfo);
+      
+      jmdns0.addServiceListener("_lancopy._tcp.local.", new LCListener(dataOwner));
+    } catch (IOException e) {
+      System.out.println(e.getMessage());
+    }
+    this.jmdns = jmdns0;
   }
 
   /**
@@ -113,33 +122,6 @@ public class JmDNSProcess {
    */
   public static JmDNSProcess start(DataOwner dataOwner) {
     return new JmDNSProcess(dataOwner);
-  }
-
-  private void broadcast() {
-    try {
-      // Create a JmDNS instance
-      JmDNS jmdns = JmDNS.create(InetAddress.getLocalHost());
-
-      // Register a service
-      ServiceInfo serviceInfo = ServiceInfo.create("_lancopy._tcp.local.", "LanCopy-" + ID.toString(), PORT, "path=string");
-      jmdns.registerService(serviceInfo);
-    } catch (IOException e) {
-      System.out.println(e.getMessage());
-    }
-  }
-
-  private void listen() {
-    try {
-      // Create a JmDNS instance
-      JmDNS jmdns = JmDNS.create(InetAddress.getLocalHost());
-
-      // Add a service listener
-      jmdns.addServiceListener("_lancopy._tcp.local.", new LCListener(dataOwner));
-    } catch (UnknownHostException e) {
-      System.out.println(e.getMessage());
-    } catch (IOException e) {
-      System.out.println(e.getMessage());
-    }
   }
 
   private final OkHttpClient client = new OkHttpClient();
@@ -154,5 +136,9 @@ public class JmDNSProcess {
     try (Response response = client.newCall(request).execute()) {
       return response.body().string();
     }
+  }
+
+  public void shutdown() {
+    jmdns.unregisterAllServices();
   }
 }

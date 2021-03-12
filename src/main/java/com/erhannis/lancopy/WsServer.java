@@ -5,22 +5,11 @@
  */
 package com.erhannis.lancopy;
 
-import io.reactivex.rxjava3.core.Observable;
-import io.reactivex.rxjava3.core.Single;
-import io.reactivex.rxjava3.subjects.PublishSubject;
-import io.reactivex.rxjava3.subjects.Subject;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javafx.beans.property.SimpleIntegerProperty;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableMap;
-import javafx.util.Pair;
 import org.eclipse.jetty.util.MultiException;
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketClose;
@@ -38,7 +27,6 @@ public class WsServer {
   private final DataOwner dataOwner;
   
   private static final Queue<Session> sessions = new ConcurrentLinkedQueue<>();
-  public final ObservableMap<String, String> remoteSummaries = FXCollections.observableMap(new HashMap<String, String>());
 
   public WsServer(DataOwner dataOwner) {
     this.dataOwner = dataOwner;
@@ -55,7 +43,6 @@ public class WsServer {
     sessions.remove(session);
   }
 
-  private ArrayList<Consumer<Pair<String, String>>> callbacks = new ArrayList<>();
   @OnWebSocketMessage
   public void message(Session session, String message) throws IOException {
     // Nothing, I think

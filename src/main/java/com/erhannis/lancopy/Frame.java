@@ -6,6 +6,8 @@
 package com.erhannis.lancopy;
 
 import com.erhannis.mathnstuff.utils.ObservableMap.Change;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 import java.io.IOException;
 import java.util.Map.Entry;
 import java.util.logging.Level;
@@ -50,6 +52,37 @@ public class Frame extends javax.swing.JFrame {
       modelServices.clear();
       for (Entry<String, String> entry : dataOwner.remoteSummaries.get().entrySet()) {
         modelServices.addElement(new NodeLine(entry.getKey(), entry.getValue()));
+      }
+    });
+    
+    this.addWindowListener(new WindowListener() {
+      @Override
+      public void windowOpened(WindowEvent e) {
+      }
+
+      @Override
+      public void windowClosing(WindowEvent e) {
+        jdp.shutdown();
+      }
+
+      @Override
+      public void windowClosed(WindowEvent e) {
+      }
+
+      @Override
+      public void windowIconified(WindowEvent e) {
+      }
+
+      @Override
+      public void windowDeiconified(WindowEvent e) {
+      }
+
+      @Override
+      public void windowActivated(WindowEvent e) {
+      }
+
+      @Override
+      public void windowDeactivated(WindowEvent e) {
       }
     });
   }
