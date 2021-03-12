@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.HashMap;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -29,10 +30,12 @@ import okhttp3.Response;
 public class JmDNSProcess {
   private static class LCListener implements ServiceListener {
     private final DataOwner dataOwner;
+    private final String localId;
     private final WsClient wsClient;
 
-    public LCListener(DataOwner dataOwner, WsClient wsClient) {
+    public LCListener(DataOwner dataOwner, String localId, WsClient wsClient) {
       this.dataOwner = dataOwner;
+      this.localId = localId;
       this.wsClient = wsClient;
     }
 
@@ -42,7 +45,6 @@ public class JmDNSProcess {
     }
 
     //TODO The updating responsibilities seem split weirdly between here and WsClient
-    
     @Override
     public void serviceRemoved(ServiceEvent event) {
       System.out.println("Service removed: " + event.getInfo());
@@ -52,12 +54,14 @@ public class JmDNSProcess {
     @Override
     public void serviceResolved(ServiceEvent event) {
       System.out.println("Service resolved: " + event.getInfo());
-      dataOwner.remoteServices.put(event.getName(), event.getInfo()); //TODO Change
-      wsClient.addService(event.getInfo());
+      if (!Objects.equals(event.getName(), localId.toString())) {
+        dataOwner.remoteServices.put(event.getName(), event.getInfo()); //TODO Change
+        wsClient.addService(event.getInfo());
+      }
     }
   }
 
-  public final UUID ID = UUID.randomUUID();
+  public final String ID = "LanCopy-" + UUID.randomUUID();
   public final int PORT;
 
   private final DataOwner dataOwner;
@@ -65,7 +69,7 @@ public class JmDNSProcess {
   private final WsClient wsClient;
 
   private final JmDNS jmdns;
-  
+
   private JmDNSProcess(DataOwner dataOwner) {
     this.dataOwner = dataOwner;
     this.wsServer = new WsServer(dataOwner);
@@ -105,16 +109,16 @@ public class JmDNSProcess {
         dataOwner.remoteSummaries.remove(change.key);
       }
     });
-    
+
     JmDNS jmdns0 = null;
     try {
       // Create a JmDNS instance
       jmdns0 = JmDNS.create(InetAddress.getLocalHost());
 
-      ServiceInfo serviceInfo = ServiceInfo.create("_lancopy._tcp.local.", "LanCopy-" + ID.toString(), PORT, "");
+      ServiceInfo serviceInfo = ServiceInfo.create("_lancopy._tcp.local.", ID, PORT, "");
       jmdns0.registerService(serviceInfo);
-      
-      jmdns0.addServiceListener("_lancopy._tcp.local.", new LCListener(dataOwner, wsClient));
+
+      jmdns0.addServiceListener("_lancopy._tcp.local.", new LCListener(dataOwner, ID, wsClient));
     } catch (IOException e) {
       System.out.println(e.getMessage());
     }
@@ -133,7 +137,7 @@ public class JmDNSProcess {
   private final OkHttpClient client = new OkHttpClient();
 
   public String pullFromNode(String id) throws IOException {
-    Request request = new Request.Builder().url(dataOwner.remoteServices.get(id).getURL("http")+"/string").build();
+    Request request = new Request.Builder().url(dataOwner.remoteServices.get(id).getURL("http") + "/string").build();
     try (Response response = client.newCall(request).execute()) {
       return response.body().string();
     }

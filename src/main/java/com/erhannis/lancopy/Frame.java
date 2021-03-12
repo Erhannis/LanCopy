@@ -48,6 +48,7 @@ public class Frame extends javax.swing.JFrame {
     initComponents();
     this.dataOwner = dataOwner;
     this.jdp = jdp;
+    this.setTitle(jdp.ID);
     DefaultListModel<NodeLine> modelServices = new DefaultListModel<>();
     listServices.setModel(modelServices);
 
