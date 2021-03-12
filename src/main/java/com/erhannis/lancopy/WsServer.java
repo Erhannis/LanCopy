@@ -5,15 +5,19 @@
  */
 package com.erhannis.lancopy;
 
+import io.reactivex.rxjava3.core.Observable;
+import io.reactivex.rxjava3.core.Single;
+import io.reactivex.rxjava3.subjects.PublishSubject;
+import io.reactivex.rxjava3.subjects.Subject;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Queue;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javafx.beans.property.SimpleIntegerProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableMap;
 import javafx.util.Pair;
@@ -25,20 +29,25 @@ import org.eclipse.jetty.websocket.api.annotations.OnWebSocketMessage;
 import org.eclipse.jetty.websocket.api.annotations.WebSocket;
 
 /**
- *
+ * Accepts incoming connections, and emits local summary updates
+ * 
  * @author erhannis
  */
 @WebSocket
-public class JmDNSWebsocket {
+public class WsServer {
+  private final DataOwner dataOwner;
+  
   private static final Queue<Session> sessions = new ConcurrentLinkedQueue<>();
   public final ObservableMap<String, String> remoteSummaries = FXCollections.observableMap(new HashMap<String, String>());
 
-  private String lastSummary = "";
+  public WsServer(DataOwner dataOwner) {
+    this.dataOwner = dataOwner;
+  }
   
   @OnWebSocketConnect
   public void connected(Session session) throws IOException {
     sessions.add(session);
-    session.getRemote().sendString(lastSummary);
+    session.getRemote().sendString(dataOwner.localSummary.get());
   }
 
   @OnWebSocketClose
@@ -49,11 +58,10 @@ public class JmDNSWebsocket {
   private ArrayList<Consumer<Pair<String, String>>> callbacks = new ArrayList<>();
   @OnWebSocketMessage
   public void message(Session session, String message) throws IOException {
-    
+    // Nothing, I think
   }
-
+  
   public void broadcast(String str) {
-    lastSummary = str;
     MultiException me = new MultiException();
     for (Session s : sessions) {
       try {
@@ -66,8 +74,8 @@ public class JmDNSWebsocket {
       try {
         throw me;
       } catch (MultiException ex) {
-        Logger.getLogger(JmDNSWebsocket.class.getName()).log(Level.SEVERE, null, ex);
+        Logger.getLogger(WsServer.class.getName()).log(Level.SEVERE, null, ex);
       }
     }
-  }
+  }  
 }

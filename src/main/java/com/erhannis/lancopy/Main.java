@@ -5,10 +5,9 @@
  */
 package com.erhannis.lancopy;
 
+import com.erhannis.mathnstuff.utils.ObservableMap;
+import com.erhannis.mathnstuff.utils.ObservableMap.Change;
 import java.util.HashMap;
-import javafx.collections.FXCollections;
-import javafx.collections.MapChangeListener.Change;
-import javafx.collections.ObservableMap;
 import javax.jmdns.JmDNS;
 
 /**
@@ -24,15 +23,15 @@ public class Main {
       /*
       Test results: OM does not fire if the map is updated to be the same as it was - ignores false changes
       */
-      ObservableMap<String, String> om = FXCollections.observableMap(new HashMap<String, String>());
-      om.addListener((Change<? extends String, ? extends String> change) -> {
-        if (change.wasRemoved()) {
-          System.out.println("removed key: " + change.getKey());
-          System.out.println("removed val: " + change.getValueRemoved());
+      ObservableMap<String, String> om = new ObservableMap<String, String>();
+      om.subscribe((Change<String, String> change) -> {
+        if (change.wasRemoved) {
+          System.out.println("removed key: " + change.key);
+          System.out.println("removed val: " + change.valueRemoved);
         }
-        if (change.wasAdded()) {
-          System.out.println("added key: " + change.getKey());
-          System.out.println("added val: " + change.getValueAdded());
+        if (change.wasAdded) {
+          System.out.println("added key: " + change.key);
+          System.out.println("added val: " + change.valueAdded);
         }
       });
 
@@ -46,7 +45,7 @@ public class Main {
         return;
       }
     }
-
-    JmDNSProcess.start();
+    
+    Frame.main(args);
   }
 }

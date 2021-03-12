@@ -5,6 +5,7 @@
  */
 package com.erhannis.lancopy;
 
+import com.erhannis.mathnstuff.utils.ObservableMap.Change;
 import java.awt.Toolkit;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.UnsupportedFlavorException;
@@ -15,19 +16,24 @@ import java.util.HashMap;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.value.ObservableValue;
-import javafx.collections.FXCollections;
-import javafx.collections.MapChangeListener.Change;
 import javax.jmdns.JmDNS;
 import javax.jmdns.ServiceEvent;
 import javax.jmdns.ServiceInfo;
 import javax.jmdns.ServiceListener;
 import spark.Spark;
 import javafx.collections.ObservableMap;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 
 public class JmDNSProcess {
-  private static class SampleListener implements ServiceListener {
+  private static class LCListener implements ServiceListener {
+    private final DataOwner dataOwner;
+
+    public LCListener(DataOwner dataOwner) {
+      this.dataOwner = dataOwner;
+    }
+
     @Override
     public void serviceAdded(ServiceEvent event) {
       System.out.println("Service added: " + event.getInfo());
@@ -36,54 +42,62 @@ public class JmDNSProcess {
     @Override
     public void serviceRemoved(ServiceEvent event) {
       System.out.println("Service removed: " + event.getInfo());
+      dataOwner.remoteServices.remove(event.getName());
     }
 
     @Override
     public void serviceResolved(ServiceEvent event) {
       System.out.println("Service resolved: " + event.getInfo());
+      dataOwner.remoteServices.put(event.getName(), event.getInfo());
     }
   }
-
-  public static final int SUMMARY_LENGTH = 50;
 
   public final UUID ID = UUID.randomUUID();
   public final int PORT;
 
-  private final SimpleStringProperty localData = new SimpleStringProperty();
-  private final JmDNSWebsocket websockets = new JmDNSWebsocket();
+  private final DataOwner dataOwner;
+  private final WsServer wsServer;
+  private final WsClient wsClient;
 
-  private JmDNSProcess() {
+  private JmDNSProcess(DataOwner dataOwner) {
+    this.dataOwner = dataOwner;
+    this.wsServer = new WsServer(dataOwner);
+    this.wsClient = new WsClient(dataOwner);
+
     Spark.port(0);
 
     try {
       //TODO //SECURITY Change according to settings
-      localData.set((String) Toolkit.getDefaultToolkit().getSystemClipboard().getData(DataFlavor.stringFlavor));
+      dataOwner.localData.set((String) Toolkit.getDefaultToolkit().getSystemClipboard().getData(DataFlavor.stringFlavor));
     } catch (UnsupportedFlavorException ex) {
       Logger.getLogger(JmDNSProcess.class.getName()).log(Level.SEVERE, null, ex);
     } catch (IOException ex) {
       Logger.getLogger(JmDNSProcess.class.getName()).log(Level.SEVERE, null, ex);
     }
 
-    Spark.webSocket("/monitor", websockets);
+    Spark.webSocket("/monitor", wsServer);
     Spark.get("/string", (request, response) -> { //TODO //SECURITY Note - this DOES mean your clipboard is always accessible by anyone.  OTOH, this is be design, until we have some form of authentication.
       //TODO Support other flavors
-      return localData.getValue();
+      return dataOwner.localData.get();
     });
     //TODO Support files
     Spark.awaitInitialization();
     PORT = Spark.port(); // There's a brief race condition, here, btw, if endpoint is called before this line
     System.out.println("JmDNSProcess " + ID + " starting on port " + PORT);
 
-    localData.addListener((ov, t, data) -> {
-      String summary = data.substring(0, Math.min(data.length(), SUMMARY_LENGTH));
-      websockets.broadcast(summary);
+    //TODO Should it be the wsServer that registers itself??  Unsure.
+    dataOwner.localSummary.subscribe((summary) -> {
+      wsServer.broadcast(summary);
     });
-    
-    websockets.remoteSummaries.addListener((Change<? extends String, ? extends String> change) -> {
-      
-    });
-    
 
+    dataOwner.remoteServices.subscribe((Change<String, ServiceInfo> change) -> {
+      if (change.wasAdded) {
+        dataOwner.remoteSummaries.put(change.key, "???"); //TODO Fix
+      } else if (change.wasRemoved) {
+        dataOwner.remoteSummaries.remove(change.key);
+      }
+    });
+   
     new Thread(() -> {
       listen();
     }).start();
@@ -97,8 +111,8 @@ public class JmDNSProcess {
    *
    * @return
    */
-  public static JmDNSProcess start() {
-    return new JmDNSProcess();
+  public static JmDNSProcess start(DataOwner dataOwner) {
+    return new JmDNSProcess(dataOwner);
   }
 
   private void broadcast() {
@@ -107,19 +121,10 @@ public class JmDNSProcess {
       JmDNS jmdns = JmDNS.create(InetAddress.getLocalHost());
 
       // Register a service
-      ServiceInfo serviceInfo = ServiceInfo.create("_http._tcp.local.", "LanCopy-" + ID.toString(), PORT, "path=index.html");
+      ServiceInfo serviceInfo = ServiceInfo.create("_lancopy._tcp.local.", "LanCopy-" + ID.toString(), PORT, "path=string");
       jmdns.registerService(serviceInfo);
-
-      // Wait a bit
-      Thread.sleep(25000);
-
-      // Unregister all services
-      jmdns.unregisterAllServices();
-
     } catch (IOException e) {
       System.out.println(e.getMessage());
-    } catch (InterruptedException ex) {
-      Logger.getLogger(JmDNSProcess.class.getName()).log(Level.SEVERE, null, ex);
     }
   }
 
@@ -129,24 +134,25 @@ public class JmDNSProcess {
       JmDNS jmdns = JmDNS.create(InetAddress.getLocalHost());
 
       // Add a service listener
-      jmdns.addServiceListener("_http._tcp.local.", new SampleListener());
-
-      // Wait a bit
-      Thread.sleep(30000);
+      jmdns.addServiceListener("_lancopy._tcp.local.", new LCListener(dataOwner));
     } catch (UnknownHostException e) {
       System.out.println(e.getMessage());
     } catch (IOException e) {
       System.out.println(e.getMessage());
-    } catch (InterruptedException ex) {
-      Logger.getLogger(JmDNSProcess.class.getName()).log(Level.SEVERE, null, ex);
     }
   }
 
-  public void updateData(String data) {
-    this.localData.set(data);
-  }
+  private final OkHttpClient client = new OkHttpClient();
 
   public ObservableMap<String, String> getSummaries() {
-    return websockets.remoteSummaries; //TODO This is getting convoluted
+    //return websockets.remoteSummaries; //TODO This is getting convoluted
+    return null;
+  }
+
+  public String pullFromNode(String id) throws IOException {
+    Request request = new Request.Builder().url(dataOwner.remoteServices.get(id).getURL("http")).build();
+    try (Response response = client.newCall(request).execute()) {
+      return response.body().string();
+    }
   }
 }
