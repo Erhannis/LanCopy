@@ -5,7 +5,11 @@
  */
 package com.erhannis.lancopy.data;
 
+import com.erhannis.mathnstuff.MeUtils;
 import com.google.common.io.ByteStreams;
+import com.google.common.primitives.Bytes;
+import com.google.common.primitives.Ints;
+import com.google.common.primitives.Longs;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
@@ -15,10 +19,14 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.SequenceInputStream;
 import java.nio.charset.Charset;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.LinkedList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.JFileChooser;
 import org.apache.commons.io.FileUtils;
 import org.kamranzafar.jtar.TarEntry;
 import org.kamranzafar.jtar.TarOutputStream;
@@ -64,14 +72,19 @@ public class FilesData extends Data {
   public InputStream serialize() {
     if (files.length == 1) {
       try {
-        System.err.println("//TODO Handle filename");
-        return new FileInputStream(files[0]);
+        // This is a little cluttered
+        byte[] filenameBytes = files[0].getName().getBytes(UTF8);
+        return new SequenceInputStream(new ByteArrayInputStream(Bytes.concat(
+                Ints.toByteArray(1), // Not yet really used
+                Ints.toByteArray(filenameBytes.length),
+                filenameBytes)),
+                new FileInputStream(files[0]));
       } catch (FileNotFoundException ex) {
         Logger.getLogger(FilesData.class.getName()).log(Level.SEVERE, null, ex);
         return new ErrorData("Error serializing files: " + ex.getMessage()).serialize();
       }
     }
-    
+
     //TODO Allow actual streaming, so we don't have to load the files into memory
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
@@ -81,11 +94,13 @@ public class FilesData extends Data {
     }
 
     try (TarOutputStream out = new TarOutputStream(baos)) {
-      LinkedList<String> path = new LinkedList<>();
       while (!pending.isEmpty()) {
         PathedFile pf = pending.pop();
         if (pf.file.isDirectory()) {
-          System.err.println("//TODO Handle directories");
+          for (File f : pf.file.listFiles()) {
+            PathedFile subfile = new PathedFile(pf.path + "/" + pf.file.getName(), f);
+            pending.add(subfile);
+          }
           continue;
         }
         out.putNextEntry(new TarEntry(pf.file, pf.path + "/" + pf.file.getName()));
@@ -104,20 +119,45 @@ public class FilesData extends Data {
       Logger.getLogger(FilesData.class.getName()).log(Level.SEVERE, null, ex);
     }
 
-    System.err.println("//TODO Handle filename");
-    return new ByteArrayInputStream(baos.toByteArray());
+    Date date = new Date();
+    SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss");
+    byte[] filenameBytes = (dateFormat.format(date)+".tar").getBytes(UTF8);
+    return new SequenceInputStream(new ByteArrayInputStream(Bytes.concat(
+            Ints.toByteArray(1),
+            Ints.toByteArray(filenameBytes.length),
+            filenameBytes)),
+            new ByteArrayInputStream(baos.toByteArray()));
   }
 
-  public static Data deserialize(InputStream stream) {
-    System.err.println("//TODO Handle filename");
-    System.err.println("//TODO Handle saving");
-    File f = new File("temp.dat");
+  private static JFileChooser fileChooser = new JFileChooser();
+  
+  public synchronized static Data deserialize(InputStream stream) {
     try {
-      FileUtils.copyInputStreamToFile(stream, f);
-    } catch (IOException ex) {
-      Logger.getLogger(FilesData.class.getName()).log(Level.SEVERE, null, ex);
-      return new ErrorData("Error deserializing files: " + ex);
+      int fileCount = Ints.fromByteArray(MeUtils.readNBytes(stream, 4));
+      File[] files = new File[fileCount];
+      for (int i = 0; i < fileCount; i++) {
+        int filenameLen = Ints.fromByteArray(MeUtils.readNBytes(stream, 4));
+        String filename = new String(MeUtils.readNBytes(stream, filenameLen), UTF8);
+        
+        //TODO Huh.  Should I really bring up a save gui in the middle of this code?
+        File f = new File(filename);
+        fileChooser.setSelectedFile(f);
+        if (fileChooser.showSaveDialog(null) == JFileChooser.APPROVE_OPTION) {
+          f = fileChooser.getSelectedFile();
+        } else {
+          throw new RuntimeException("File save canceled");
+        }
+//        if (f.exists()) {
+//          throw new IllegalStateException("File already exists! " + filename);
+//        }
+        //TODO Wait until all files named?
+        FileUtils.copyInputStreamToFile(stream, f);
+        files[i] = f;
+      }
+      return new FilesData(files);
+    } catch (Throwable t) {
+      Logger.getLogger(FilesData.class.getName()).log(Level.SEVERE, null, t);
+      return new ErrorData("Error deserializing files: " + t);
     }
-    return new FilesData(new File[]{f});
   }
 }

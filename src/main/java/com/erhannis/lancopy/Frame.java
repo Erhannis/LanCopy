@@ -265,7 +265,7 @@ public class Frame extends javax.swing.JFrame {
           taData.setText(((FilesData) data).toString());
           System.err.println("//TODO Copy file locations?");
           //Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(((ErrorData) data).text), null);
-          System.err.println("//TODO Save files");
+          //System.err.println("//TODO Save files");
         }
       } catch (IOException ex) {
         Logger.getLogger(Frame.class.getName()).log(Level.SEVERE, null, ex);
