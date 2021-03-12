@@ -21,9 +21,12 @@ import java.awt.dnd.DropTargetDropEvent;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.DefaultListModel;
@@ -60,6 +63,7 @@ public class Frame extends javax.swing.JFrame {
     this.dataOwner = dataOwner;
     this.jdp = jdp;
     this.setTitle(jdp.ID);
+    this.cbLoopClipboard.setSelected(dataOwner.cachedSettingLoopClipboard);
     DefaultListModel<NodeLine> modelServices = new DefaultListModel<>();
     listServices.setModel(modelServices);
 
@@ -87,6 +91,9 @@ public class Frame extends javax.swing.JFrame {
           Runtime.getRuntime().halt(1);
         }).start();
         jdp.shutdown();
+        if (dataOwner.cachedSettingSaveSettingsOnExit) {
+          dataOwner.saveSettings();
+        }
       }
 
       @Override
@@ -207,7 +214,7 @@ public class Frame extends javax.swing.JFrame {
     });
 
     cbLoopClipboard.setText("Loop clipboard");
-    cbLoopClipboard.setToolTipText("Continually (1Hz) broadcast clipboard");
+    cbLoopClipboard.setToolTipText("Continually (1Hz) broadcast clipboard.  SETTING SAVED ON SHUTDOWN.  See settings.xml");
     cbLoopClipboard.addChangeListener(new javax.swing.event.ChangeListener() {
       public void stateChanged(javax.swing.event.ChangeEvent evt) {
         cbLoopClipboardStateChanged(evt);
@@ -379,6 +386,8 @@ public class Frame extends javax.swing.JFrame {
     boolean looping = cbLoopClipboard.isSelected();
     btnPostFiles.setEnabled(!looping);
     btnSendClipboard.setEnabled(!looping);
+    dataOwner.cachedSettingLoopClipboard = looping;
+    //TODO Save settings?
   }//GEN-LAST:event_cbLoopClipboardStateChanged
 
   private void pullFromNode() {
@@ -416,6 +425,7 @@ public class Frame extends javax.swing.JFrame {
    */
   public static void main(String args[]) {
     final DataOwner dataOwner = new DataOwner();
+    dataOwner.loadSettings();
     final JmDNSProcess jdp = JmDNSProcess.start(dataOwner);
 
 //    /* Set the Nimbus look and feel */

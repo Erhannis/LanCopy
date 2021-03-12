@@ -122,7 +122,7 @@
             <Component class="javax.swing.JCheckBox" name="cbLoopClipboard">
               <Properties>
                 <Property name="text" type="java.lang.String" value="Loop clipboard"/>
-                <Property name="toolTipText" type="java.lang.String" value="Continually (1Hz) broadcast clipboard"/>
+                <Property name="toolTipText" type="java.lang.String" value="Continually (1Hz) broadcast clipboard.  SETTING SAVED ON SHUTDOWN.  See settings.xml"/>
               </Properties>
               <Events>
                 <EventHandler event="stateChanged" listener="javax.swing.event.ChangeListener" parameters="javax.swing.event.ChangeEvent" handler="cbLoopClipboardStateChanged"/>

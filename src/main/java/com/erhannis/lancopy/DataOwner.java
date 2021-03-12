@@ -8,6 +8,14 @@ package com.erhannis.lancopy;
 import com.erhannis.lancopy.data.Data;
 import com.erhannis.mathnstuff.utils.Observable;
 import com.erhannis.mathnstuff.utils.ObservableMap;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.Properties;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.jmdns.ServiceInfo;
 
 /**
@@ -15,12 +23,15 @@ import javax.jmdns.ServiceInfo;
  * @author erhannis
  */
 public class DataOwner {
-  public static final int SUMMARY_LENGTH = 50;
+  public int SUMMARY_LENGTH = 100;
   
   public final Observable<String> localSummary = new Observable<>();
   public final Observable<Data> localData = new Observable<>();
   public final ObservableMap<String, String> remoteSummaries = new ObservableMap<>();
   public final ObservableMap<String, ServiceInfo> remoteServices = new ObservableMap<>();
+  
+  public boolean cachedSettingLoopClipboard = false;
+  public boolean cachedSettingSaveSettingsOnExit = true;
   
   public DataOwner() {
     localData.subscribe((data) -> {
@@ -28,5 +39,40 @@ public class DataOwner {
       summary = summary.substring(0, Math.min(summary.length(), SUMMARY_LENGTH));
       localSummary.set(summary);
     });
+  }
+  
+  public void saveSettings() {
+    try {
+      Properties props = new Properties();
+      File f = new File("settings.xml");
+      if (f.exists()) {
+        props.loadFromXML(new FileInputStream(f));
+      }
+      props.setProperty("SUMMARY_LENGTH", ""+SUMMARY_LENGTH);
+      props.setProperty("LOOP_CLIPBOARD", ""+cachedSettingLoopClipboard);
+      props.setProperty("SAVE_SETTINGS_ON_EXIT", ""+cachedSettingSaveSettingsOnExit);
+      props.storeToXML(new FileOutputStream("settings.xml"), "");
+    } catch (FileNotFoundException ex) {
+      Logger.getLogger(DataOwner.class.getName()).log(Level.SEVERE, null, ex);
+    } catch (IOException ex) {
+      Logger.getLogger(DataOwner.class.getName()).log(Level.SEVERE, null, ex);
+    }
+  }
+  
+  public void loadSettings() {
+    try {
+      Properties props = new Properties();
+      File f = new File("settings.xml");
+      props.loadFromXML(new FileInputStream(f));
+      SUMMARY_LENGTH = Integer.parseInt(props.getProperty("SUMMARY_LENGTH", ""+SUMMARY_LENGTH));
+      cachedSettingLoopClipboard = Boolean.parseBoolean(props.getProperty("LOOP_CLIPBOARD", ""+cachedSettingLoopClipboard));
+      cachedSettingSaveSettingsOnExit = Boolean.parseBoolean(props.getProperty("SAVE_SETTINGS_ON_EXIT", ""+cachedSettingSaveSettingsOnExit));
+    } catch (FileNotFoundException ex) {
+      Logger.getLogger(DataOwner.class.getName()).log(Level.SEVERE, null, ex);
+    } catch (IOException ex) {
+      Logger.getLogger(DataOwner.class.getName()).log(Level.SEVERE, null, ex);
+    } catch (NumberFormatException ex) {
+      Logger.getLogger(DataOwner.class.getName()).log(Level.SEVERE, null, ex);
+    }
   }
 }

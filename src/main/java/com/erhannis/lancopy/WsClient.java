@@ -5,7 +5,6 @@
  */
 package com.erhannis.lancopy;
 
-import static com.erhannis.lancopy.DataOwner.SUMMARY_LENGTH;
 import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.jmdns.ServiceInfo;
@@ -41,7 +40,7 @@ public class WsClient extends WebSocketListener {
   @Override
   public void onMessage(WebSocket webSocket, String text) {
     System.out.println("CWS Receiving : " + text);
-    text = text.substring(0, Math.min(text.length(), SUMMARY_LENGTH));
+    text = text.substring(0, Math.min(text.length(), dataOwner.SUMMARY_LENGTH));
     dataOwner.remoteSummaries.put(socketIds.get(webSocket), text);
   }
 
