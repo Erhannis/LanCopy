@@ -5,14 +5,24 @@
  */
 package com.erhannis.lancopy;
 
+import com.erhannis.lancopy.data.BinaryData;
+import com.erhannis.lancopy.data.Data;
+import com.erhannis.lancopy.data.ErrorData;
+import com.erhannis.lancopy.data.FilesData;
+import com.erhannis.lancopy.data.TextData;
 import com.erhannis.mathnstuff.utils.ObservableMap.Change;
 import java.awt.Toolkit;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.StringSelection;
 import java.awt.datatransfer.UnsupportedFlavorException;
+import java.awt.dnd.DnDConstants;
+import java.awt.dnd.DropTarget;
+import java.awt.dnd.DropTargetDropEvent;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.io.File;
 import java.io.IOException;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -62,10 +72,6 @@ public class Frame extends javax.swing.JFrame {
 
     this.addWindowListener(new WindowListener() {
       @Override
-      public void windowOpened(WindowEvent e) {
-      }
-
-      @Override
       public void windowClosing(WindowEvent e) {
         new Thread(() -> {
           try {
@@ -76,6 +82,10 @@ public class Frame extends javax.swing.JFrame {
           Runtime.getRuntime().halt(1);
         }).start();
         jdp.shutdown();
+      }
+
+      @Override
+      public void windowOpened(WindowEvent e) {
       }
 
       @Override
@@ -98,6 +108,26 @@ public class Frame extends javax.swing.JFrame {
       public void windowDeactivated(WindowEvent e) {
       }
     });
+
+    this.setDropTarget(new DropTarget() {
+      //TODO Might be nice to hint acceptance
+      
+      public synchronized void drop(DropTargetDropEvent evt) {
+        if (evt.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
+          evt.acceptDrop(DnDConstants.ACTION_COPY);
+        } else {
+          return;
+        }
+        try {
+          List<File> droppedFiles = (List<File>) evt.getTransferable().getTransferData(DataFlavor.javaFileListFlavor);
+          System.out.println("Dropped files: " + droppedFiles);
+          dataOwner.localData.set(new FilesData(droppedFiles.toArray(new File[]{})));
+          evt.dropComplete(true);
+        } catch (Exception ex) {
+          ex.printStackTrace();
+        }
+      }
+    });
   }
 
   /**
@@ -116,6 +146,7 @@ public class Frame extends javax.swing.JFrame {
     jPanel2 = new javax.swing.JPanel();
     jScrollPane1 = new javax.swing.JScrollPane();
     listServices = new javax.swing.JList<>();
+    btnSendClipboard = new javax.swing.JButton();
 
     setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -153,20 +184,33 @@ public class Frame extends javax.swing.JFrame {
     });
     jScrollPane1.setViewportView(listServices);
 
+    btnSendClipboard.setText("Send clipboard");
+    btnSendClipboard.addActionListener(new java.awt.event.ActionListener() {
+      public void actionPerformed(java.awt.event.ActionEvent evt) {
+        btnSendClipboardActionPerformed(evt);
+      }
+    });
+
     javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
     jPanel2.setLayout(jPanel2Layout);
     jPanel2Layout.setHorizontalGroup(
       jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
       .addGroup(jPanel2Layout.createSequentialGroup()
         .addContainerGap()
-        .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 656, Short.MAX_VALUE)
+        .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 537, Short.MAX_VALUE)
+        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+        .addComponent(btnSendClipboard)
         .addContainerGap())
     );
     jPanel2Layout.setVerticalGroup(
       jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
       .addGroup(jPanel2Layout.createSequentialGroup()
         .addContainerGap()
-        .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 330, Short.MAX_VALUE)
+        .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+          .addGroup(jPanel2Layout.createSequentialGroup()
+            .addComponent(btnSendClipboard)
+            .addGap(0, 0, Short.MAX_VALUE))
+          .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 330, Short.MAX_VALUE))
         .addContainerGap())
     );
 
@@ -192,15 +236,37 @@ public class Frame extends javax.swing.JFrame {
     }
   }//GEN-LAST:event_listServicesMouseClicked
 
+  private void btnSendClipboardActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSendClipboardActionPerformed
+    try {
+      dataOwner.localData.set(new TextData((String) Toolkit.getDefaultToolkit().getSystemClipboard().getData(DataFlavor.stringFlavor)));
+    } catch (UnsupportedFlavorException ex) {
+      Logger.getLogger(Frame.class.getName()).log(Level.SEVERE, null, ex);
+    } catch (IOException ex) {
+      Logger.getLogger(Frame.class.getName()).log(Level.SEVERE, null, ex);
+    }
+  }//GEN-LAST:event_btnSendClipboardActionPerformed
+
   private void pullFromNode() {
     NodeLine nl = listServices.getSelectedValue();
     if (nl != null) {
       try {
-        String data = jdp.pullFromNode(nl.id);
+        Data data = jdp.pullFromNode(nl.id);
         //System.out.println("rx data: " + data);
-        data = data != null ? data : "ERROR";
-        taData.setText(data);        
-        Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(data), null);
+        System.err.println("//TODO Handle binary data");
+        if (data instanceof TextData) {
+          taData.setText(((TextData) data).text);
+          Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(((TextData) data).text), null);
+        } else if (data instanceof ErrorData) {
+          taData.setText(((ErrorData) data).text);
+          Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(((ErrorData) data).text), null);
+        } else if (data instanceof BinaryData) {
+          throw new RuntimeException("Unhandled data type: binary");
+        } else if (data instanceof FilesData) {
+          taData.setText(((FilesData) data).toString());
+          System.err.println("//TODO Copy file locations?");
+          //Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(((ErrorData) data).text), null);
+          System.err.println("//TODO Save files");
+        }
       } catch (IOException ex) {
         Logger.getLogger(Frame.class.getName()).log(Level.SEVERE, null, ex);
         taData.setText("ERROR: " + ex.getMessage());
@@ -215,22 +281,22 @@ public class Frame extends javax.swing.JFrame {
     final DataOwner dataOwner = new DataOwner();
     final JmDNSProcess jdp = JmDNSProcess.start(dataOwner);
 
-    Thread t = new Thread(() -> {
-      while (true) {
-        try {
-          dataOwner.localData.set((String) Toolkit.getDefaultToolkit().getSystemClipboard().getData(DataFlavor.stringFlavor));
-        } catch (Throwable ex) {
-          Logger.getLogger(Frame.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        try {
-          Thread.sleep(1000);
-        } catch (InterruptedException ex) {
-          Logger.getLogger(Frame.class.getName()).log(Level.SEVERE, null, ex);
-        }
-      }
-    });
-    t.setDaemon(true);
-    t.start();
+//    Thread t = new Thread(() -> {
+//      while (true) {
+//        try {
+//          dataOwner.localData.set(new TextData((String) Toolkit.getDefaultToolkit().getSystemClipboard().getData(DataFlavor.stringFlavor)));
+//        } catch (Throwable ex) {
+//          Logger.getLogger(Frame.class.getName()).log(Level.SEVERE, null, ex);
+//        }
+//        try {
+//          Thread.sleep(1000);
+//        } catch (InterruptedException ex) {
+//          Logger.getLogger(Frame.class.getName()).log(Level.SEVERE, null, ex);
+//        }
+//      }
+//    });
+//    t.setDaemon(true);
+//    t.start();
 
 //    /* Set the Nimbus look and feel */
 //    
@@ -255,7 +321,6 @@ public class Frame extends javax.swing.JFrame {
 //      java.util.logging.Logger.getLogger(Frame.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
 //    }
 //    //</editor-fold>
-    
     /* Create and display the form */
     java.awt.EventQueue.invokeLater(new Runnable() {
       public void run() {
@@ -265,6 +330,7 @@ public class Frame extends javax.swing.JFrame {
   }
 
   // Variables declaration - do not modify//GEN-BEGIN:variables
+  private javax.swing.JButton btnSendClipboard;
   private javax.swing.JPanel jPanel1;
   private javax.swing.JPanel jPanel2;
   private javax.swing.JScrollPane jScrollPane1;

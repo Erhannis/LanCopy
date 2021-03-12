@@ -5,6 +5,7 @@
  */
 package com.erhannis.lancopy;
 
+import com.erhannis.lancopy.data.Data;
 import com.erhannis.mathnstuff.utils.Observable;
 import com.erhannis.mathnstuff.utils.ObservableMap;
 import javax.jmdns.ServiceInfo;
@@ -17,13 +18,14 @@ public class DataOwner {
   public static final int SUMMARY_LENGTH = 50;
   
   public final Observable<String> localSummary = new Observable<>();
-  public final Observable<String> localData = new Observable<>();
+  public final Observable<Data> localData = new Observable<>();
   public final ObservableMap<String, String> remoteSummaries = new ObservableMap<>();
   public final ObservableMap<String, ServiceInfo> remoteServices = new ObservableMap<>();
   
   public DataOwner() {
     localData.subscribe((data) -> {
-      String summary = data.substring(0, Math.min(data.length(), SUMMARY_LENGTH));
+      String summary = data.toString();
+      summary = summary.substring(0, Math.min(summary.length(), SUMMARY_LENGTH));
       localSummary.set(summary);
     });
   }

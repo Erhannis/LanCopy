@@ -5,6 +5,11 @@
  */
 package com.erhannis.lancopy;
 
+import com.erhannis.lancopy.data.BinaryData;
+import com.erhannis.lancopy.data.Data;
+import com.erhannis.lancopy.data.ErrorData;
+import com.erhannis.lancopy.data.FilesData;
+import com.erhannis.lancopy.data.TextData;
 import com.erhannis.mathnstuff.utils.ObservableMap.Change;
 import java.awt.Toolkit;
 import java.awt.datatransfer.DataFlavor;
@@ -83,7 +88,7 @@ public class JmDNSProcess {
 
     try {
       //TODO //SECURITY Change according to settings
-      dataOwner.localData.set((String) Toolkit.getDefaultToolkit().getSystemClipboard().getData(DataFlavor.stringFlavor));
+      dataOwner.localData.set(new TextData((String) Toolkit.getDefaultToolkit().getSystemClipboard().getData(DataFlavor.stringFlavor)));
     } catch (UnsupportedFlavorException ex) {
       Logger.getLogger(JmDNSProcess.class.getName()).log(Level.SEVERE, null, ex);
     } catch (IOException ex) {
@@ -91,9 +96,11 @@ public class JmDNSProcess {
     }
 
     Spark.webSocket("/monitor", wsServer);
-    Spark.get("/string", (request, response) -> { //TODO //SECURITY Note - this DOES mean your clipboard is always accessible by anyone.  OTOH, this is be design, until we have some form of authentication.
+    Spark.get("/data", (request, response) -> { //TODO //SECURITY Note - this DOES mean your clipboard is always accessible by anyone.  OTOH, this is be design, until we have some form of authentication.
       //TODO Support other flavors
-      return dataOwner.localData.get();
+      Data data = dataOwner.localData.get();
+      response.type(data.getMime());
+      return data.serialize();
     });
     //TODO Support files
     Spark.awaitInitialization();
@@ -153,10 +160,19 @@ public class JmDNSProcess {
 
   private final OkHttpClient client = new OkHttpClient();
 
-  public String pullFromNode(String id) throws IOException {
-    Request request = new Request.Builder().url(dataOwner.remoteServices.get(id).getURL("http") + "/string").build();
+  public Data pullFromNode(String id) throws IOException {
+    Request request = new Request.Builder().url(dataOwner.remoteServices.get(id).getURL("http") + "/data").build();
     try (Response response = client.newCall(request).execute()) {
-      return response.body().string();
+      switch (response.header("content-type")) {
+        case "text/plain":
+          return TextData.deserialize(response.body().byteStream());
+        case "application/octet-stream":
+          return BinaryData.deserialize(response.body().byteStream());
+        case "lancopy/files":
+          return FilesData.deserialize(response.body().byteStream());
+        default:
+          return new ErrorData("Unhandled MIME: " + response.header("content-type"));
+      }
     }
   }
 
