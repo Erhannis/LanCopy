@@ -6,6 +6,10 @@
 package com.erhannis.lancopy;
 
 import com.erhannis.mathnstuff.utils.ObservableMap.Change;
+import java.awt.Toolkit;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.StringSelection;
+import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.io.IOException;
@@ -27,16 +31,16 @@ public class Frame extends javax.swing.JFrame {
       this.id = id;
       this.summary = summary;
     }
-    
+
     @Override
     public String toString() {
-      return id+" - "+summary;
+      return id + " - " + summary;
     }
   }
-  
+
   private final DataOwner dataOwner;
   private final JmDNSProcess jdp;
-  
+
   /**
    * Creates new form Frame
    */
@@ -46,7 +50,7 @@ public class Frame extends javax.swing.JFrame {
     this.jdp = jdp;
     DefaultListModel<NodeLine> modelServices = new DefaultListModel<>();
     listServices.setModel(modelServices);
-    
+
     dataOwner.remoteSummaries.subscribe((Change<String, String> change) -> {
       //TODO Make efficient
       modelServices.clear();
@@ -54,7 +58,7 @@ public class Frame extends javax.swing.JFrame {
         modelServices.addElement(new NodeLine(entry.getKey(), entry.getValue()));
       }
     });
-    
+
     this.addWindowListener(new WindowListener() {
       @Override
       public void windowOpened(WindowEvent e) {
@@ -193,44 +197,66 @@ public class Frame extends javax.swing.JFrame {
     if (nl != null) {
       try {
         String data = jdp.pullFromNode(nl.id);
-        System.out.println("rx data: " + data);
-        taData.setText(data != null ? data : "ERROR");
+        //System.out.println("rx data: " + data);
+        data = data != null ? data : "ERROR";
+        taData.setText(data);        
+        Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(data), null);
       } catch (IOException ex) {
         Logger.getLogger(Frame.class.getName()).log(Level.SEVERE, null, ex);
         taData.setText("ERROR: " + ex.getMessage());
       }
     }
   }
-  
+
   /**
    * @param args the command line arguments
    */
   public static void main(String args[]) {
     final DataOwner dataOwner = new DataOwner();
     final JmDNSProcess jdp = JmDNSProcess.start(dataOwner);
-    
-    /* Set the Nimbus look and feel */
-    //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
-    /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
-         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
-     */
-    try {
-      for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
-        if ("Nimbus".equals(info.getName())) {
-          javax.swing.UIManager.setLookAndFeel(info.getClassName());
-          break;
+
+    Thread t = new Thread(() -> {
+      while (true) {
+        try {
+          dataOwner.localData.set((String) Toolkit.getDefaultToolkit().getSystemClipboard().getData(DataFlavor.stringFlavor));
+        } catch (UnsupportedFlavorException ex) {
+          Logger.getLogger(Frame.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IOException ex) {
+          Logger.getLogger(Frame.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        try {
+          Thread.sleep(1000);
+        } catch (InterruptedException ex) {
+          Logger.getLogger(Frame.class.getName()).log(Level.SEVERE, null, ex);
         }
       }
-    } catch (ClassNotFoundException ex) {
-      java.util.logging.Logger.getLogger(Frame.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-    } catch (InstantiationException ex) {
-      java.util.logging.Logger.getLogger(Frame.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-    } catch (IllegalAccessException ex) {
-      java.util.logging.Logger.getLogger(Frame.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-    } catch (javax.swing.UnsupportedLookAndFeelException ex) {
-      java.util.logging.Logger.getLogger(Frame.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-    }
-    //</editor-fold>
+    });
+    t.setDaemon(true);
+    t.start();
+
+//    /* Set the Nimbus look and feel */
+//    
+//    //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
+//    /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
+//         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
+//     */
+//    try {
+//      for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
+//        if ("Nimbus".equals(info.getName())) {
+//          javax.swing.UIManager.setLookAndFeel(info.getClassName());
+//          break;
+//        }
+//      }
+//    } catch (ClassNotFoundException ex) {
+//      java.util.logging.Logger.getLogger(Frame.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+//    } catch (InstantiationException ex) {
+//      java.util.logging.Logger.getLogger(Frame.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+//    } catch (IllegalAccessException ex) {
+//      java.util.logging.Logger.getLogger(Frame.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+//    } catch (javax.swing.UnsupportedLookAndFeelException ex) {
+//      java.util.logging.Logger.getLogger(Frame.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+//    }
+//    //</editor-fold>
     
     /* Create and display the form */
     java.awt.EventQueue.invokeLater(new Runnable() {

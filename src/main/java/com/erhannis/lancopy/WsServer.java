@@ -19,23 +19,28 @@ import org.eclipse.jetty.websocket.api.annotations.WebSocket;
 
 /**
  * Accepts incoming connections, and emits local summary updates
- * 
+ *
  * @author erhannis
  */
 @WebSocket
 public class WsServer {
   private final DataOwner dataOwner;
-  
+
   private static final Queue<Session> sessions = new ConcurrentLinkedQueue<>();
 
   public WsServer(DataOwner dataOwner) {
     this.dataOwner = dataOwner;
   }
-  
+
   @OnWebSocketConnect
   public void connected(Session session) throws IOException {
     sessions.add(session);
-    session.getRemote().sendString(dataOwner.localSummary.get());
+    try {
+      String str = dataOwner.localSummary.get();
+      session.getRemote().sendString(str != null ? str : "");
+    } catch (Throwable t) {
+      t.printStackTrace();
+    }
   }
 
   @OnWebSocketClose
@@ -47,7 +52,7 @@ public class WsServer {
   public void message(Session session, String message) throws IOException {
     // Nothing, I think
   }
-  
+
   public void broadcast(String str) {
     MultiException me = new MultiException();
     for (Session s : sessions) {
@@ -64,5 +69,5 @@ public class WsServer {
         Logger.getLogger(WsServer.class.getName()).log(Level.SEVERE, null, ex);
       }
     }
-  }  
+  }
 }

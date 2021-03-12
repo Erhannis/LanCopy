@@ -29,9 +29,11 @@ import okhttp3.Response;
 public class JmDNSProcess {
   private static class LCListener implements ServiceListener {
     private final DataOwner dataOwner;
+    private final WsClient wsClient;
 
-    public LCListener(DataOwner dataOwner) {
+    public LCListener(DataOwner dataOwner, WsClient wsClient) {
       this.dataOwner = dataOwner;
+      this.wsClient = wsClient;
     }
 
     @Override
@@ -39,16 +41,19 @@ public class JmDNSProcess {
       System.out.println("Service added: " + event.getInfo());
     }
 
+    //TODO The updating responsibilities seem split weirdly between here and WsClient
+    
     @Override
     public void serviceRemoved(ServiceEvent event) {
       System.out.println("Service removed: " + event.getInfo());
-      dataOwner.remoteServices.remove(event.getName());
+      //dataOwner.remoteServices.remove(event.getName()); //TODO Change
     }
 
     @Override
     public void serviceResolved(ServiceEvent event) {
       System.out.println("Service resolved: " + event.getInfo());
-      dataOwner.remoteServices.put(event.getName(), event.getInfo());
+      dataOwner.remoteServices.put(event.getName(), event.getInfo()); //TODO Change
+      wsClient.addService(event.getInfo());
     }
   }
 
@@ -89,6 +94,7 @@ public class JmDNSProcess {
 
     //TODO Should it be the wsServer that registers itself??  Unsure.
     dataOwner.localSummary.subscribe((summary) -> {
+      System.out.println("LS: " + summary);
       wsServer.broadcast(summary);
     });
 
@@ -99,16 +105,16 @@ public class JmDNSProcess {
         dataOwner.remoteSummaries.remove(change.key);
       }
     });
-
+    
     JmDNS jmdns0 = null;
     try {
       // Create a JmDNS instance
       jmdns0 = JmDNS.create(InetAddress.getLocalHost());
 
-      ServiceInfo serviceInfo = ServiceInfo.create("_lancopy._tcp.local.", "LanCopy-" + ID.toString(), PORT, "path=string");
+      ServiceInfo serviceInfo = ServiceInfo.create("_lancopy._tcp.local.", "LanCopy-" + ID.toString(), PORT, "");
       jmdns0.registerService(serviceInfo);
       
-      jmdns0.addServiceListener("_lancopy._tcp.local.", new LCListener(dataOwner));
+      jmdns0.addServiceListener("_lancopy._tcp.local.", new LCListener(dataOwner, wsClient));
     } catch (IOException e) {
       System.out.println(e.getMessage());
     }
@@ -126,13 +132,8 @@ public class JmDNSProcess {
 
   private final OkHttpClient client = new OkHttpClient();
 
-  public ObservableMap<String, String> getSummaries() {
-    //return websockets.remoteSummaries; //TODO This is getting convoluted
-    return null;
-  }
-
   public String pullFromNode(String id) throws IOException {
-    Request request = new Request.Builder().url(dataOwner.remoteServices.get(id).getURL("http")).build();
+    Request request = new Request.Builder().url(dataOwner.remoteServices.get(id).getURL("http")+"/string").build();
     try (Response response = client.newCall(request).execute()) {
       return response.body().string();
     }
@@ -140,5 +141,6 @@ public class JmDNSProcess {
 
   public void shutdown() {
     jmdns.unregisterAllServices();
+    wsClient.shutdown();
   }
 }
