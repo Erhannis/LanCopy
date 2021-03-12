@@ -10,6 +10,7 @@ import com.erhannis.lancopy.data.Data;
 import com.erhannis.lancopy.data.ErrorData;
 import com.erhannis.lancopy.data.FilesData;
 import com.erhannis.lancopy.data.TextData;
+import com.erhannis.mathnstuff.components.ProgressDialog;
 import com.erhannis.mathnstuff.utils.ObservableMap.Change;
 import java.awt.Toolkit;
 import java.awt.datatransfer.DataFlavor;
@@ -31,6 +32,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.DefaultListModel;
 import javax.swing.JFileChooser;
+import javax.swing.JOptionPane;
+import javax.swing.JProgressBar;
 
 /**
  *
@@ -70,7 +73,7 @@ public class Frame extends javax.swing.JFrame {
     dataOwner.localData.subscribeWithGet(data -> {
       taPostedData.setText("" + data);
     });
-    
+
     dataOwner.remoteSummaries.subscribeWithGet((Change<String, String> change) -> {
       //TODO Make efficient
       modelServices.clear();
@@ -123,7 +126,7 @@ public class Frame extends javax.swing.JFrame {
 
     DropTarget dt = new DropTarget() {
       //TODO Might be nice to hint acceptance
-      
+
       public synchronized void drop(DropTargetDropEvent evt) {
         if (cbLoopClipboard.isSelected()) {
           return;
@@ -143,12 +146,12 @@ public class Frame extends javax.swing.JFrame {
         }
       }
     };
-    
+
     // This segment is weird.  Something funky going on.  If you change it, things break.
     taPostedData.setDropTarget(dt);
     taLoadedData.setDropTarget(dt);
     this.setDropTarget(dt);
-    
+
     Thread t = new Thread(() -> {
       while (true) {
         if (cbLoopClipboard.isSelected()) {
@@ -166,7 +169,7 @@ public class Frame extends javax.swing.JFrame {
       }
     });
     t.setDaemon(true);
-    t.start();    
+    t.start();
   }
 
   /**
@@ -195,6 +198,9 @@ public class Frame extends javax.swing.JFrame {
     jScrollPane1 = new javax.swing.JScrollPane();
     listServices = new javax.swing.JList<>();
     jLabel1 = new javax.swing.JLabel();
+    jMenuBar1 = new javax.swing.JMenuBar();
+    jMenu3 = new javax.swing.JMenu();
+    miAbout = new javax.swing.JMenuItem();
 
     setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -298,7 +304,7 @@ public class Frame extends javax.swing.JFrame {
         .addContainerGap()
         .addComponent(jLabel2)
         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-        .addComponent(jScrollPane4, javax.swing.GroupLayout.DEFAULT_SIZE, 115, Short.MAX_VALUE)
+        .addComponent(jScrollPane4, javax.swing.GroupLayout.DEFAULT_SIZE, 92, Short.MAX_VALUE)
         .addContainerGap())
     );
 
@@ -343,6 +349,20 @@ public class Frame extends javax.swing.JFrame {
 
     jSplitPane1.setRightComponent(jSplitPane3);
 
+    jMenu3.setText("Help");
+
+    miAbout.setText("About");
+    miAbout.addActionListener(new java.awt.event.ActionListener() {
+      public void actionPerformed(java.awt.event.ActionEvent evt) {
+        miAboutActionPerformed(evt);
+      }
+    });
+    jMenu3.add(miAbout);
+
+    jMenuBar1.add(jMenu3);
+
+    setJMenuBar(jMenuBar1);
+
     javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
     getContentPane().setLayout(layout);
     layout.setHorizontalGroup(
@@ -374,7 +394,7 @@ public class Frame extends javax.swing.JFrame {
   }//GEN-LAST:event_btnSendClipboardActionPerformed
 
   public final JFileChooser fileChooser = new JFileChooser();
-  
+
   private void btnPostFilesActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnPostFilesActionPerformed
     fileChooser.setMultiSelectionEnabled(true);
     if (fileChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
@@ -390,10 +410,33 @@ public class Frame extends javax.swing.JFrame {
     //TODO Save settings?
   }//GEN-LAST:event_cbLoopClipboardStateChanged
 
+  private void miAboutActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_miAboutActionPerformed
+    JOptionPane.showMessageDialog(null,
+              "Double click to pull a connected computer's clipboard.\n"
+            + "Open LanCopy on both computers A and B.  Copy text on A, click \"Post clipboard\",\n"
+            + "then on B, double-click A's node to pull the data over and into B's clipboard.\n"
+            + "You can click \"Post files...\", or drag files onto the window, to post files.\n"
+            + "Checking \"Loop clipboard\" will cause the clipboard to be checked every second\n"
+            + "for change, and any changes to be broadcast.\n"
+            + "\n"
+            + "Only a summary of data is broadcast, until a node requests the full data.\n"
+            + "Beware, there is basically zero security on this.  It's unencrypted, and\n"
+            + "unauthenticated.\n"
+            + "\n"
+            + "Erhannis, 2021\n"
+            + "MIT License\n"
+            + "https://github.com/Erhannis/LanCopy");
+  }//GEN-LAST:event_miAboutActionPerformed
+
   private void pullFromNode() {
     NodeLine nl = listServices.getSelectedValue();
     if (nl != null) {
+      System.out.println("asdf 0");
+      ProgressDialog pd = new ProgressDialog(this, "<html>asdfasdfasdfasdfasdfasdfasdasdfasdf<br/>qwerqwerqwerqw</html>");
+      System.out.println("asdf 1");
       try {
+        pd.setVisible(true);
+        System.out.println("asdf 2");
         Data data = jdp.pullFromNode(nl.id);
         //System.out.println("rx data: " + data);
         System.err.println("//TODO Handle binary data");
@@ -416,6 +459,12 @@ public class Frame extends javax.swing.JFrame {
       } catch (IOException ex) {
         Logger.getLogger(Frame.class.getName()).log(Level.SEVERE, null, ex);
         taLoadedData.setText("ERROR: " + ex.getMessage());
+      } finally {
+        if (pd != null) {
+          System.out.println("asdf 3");
+          pd.setVisible(false);
+          pd.dispose();
+        }
       }
     }
   }
@@ -466,6 +515,8 @@ public class Frame extends javax.swing.JFrame {
   private javax.swing.JLabel jLabel1;
   private javax.swing.JLabel jLabel2;
   private javax.swing.JLabel jLabel3;
+  private javax.swing.JMenu jMenu3;
+  private javax.swing.JMenuBar jMenuBar1;
   private javax.swing.JPanel jPanel1;
   private javax.swing.JPanel jPanel2;
   private javax.swing.JPanel jPanel3;
@@ -475,6 +526,7 @@ public class Frame extends javax.swing.JFrame {
   private javax.swing.JSplitPane jSplitPane1;
   private javax.swing.JSplitPane jSplitPane3;
   private javax.swing.JList<NodeLine> listServices;
+  private javax.swing.JMenuItem miAbout;
   private javax.swing.JTextArea taLoadedData;
   private javax.swing.JTextArea taPostedData;
   // End of variables declaration//GEN-END:variables
