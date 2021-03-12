@@ -34,6 +34,7 @@ public class WsClient extends WebSocketListener {
 
   @Override
   public void onOpen(WebSocket webSocket, Response response) {
+    System.out.println("CWS Open");
     //dataOwner.remoteServices.put(socketIds.get(webSocket), "???"); //TODO Change
   }
 

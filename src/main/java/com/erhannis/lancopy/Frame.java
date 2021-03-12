@@ -67,6 +67,14 @@ public class Frame extends javax.swing.JFrame {
 
       @Override
       public void windowClosing(WindowEvent e) {
+        new Thread(() -> {
+          try {
+            Thread.sleep(5000);
+          } catch (Throwable t) {
+            Logger.getLogger(Frame.class.getName()).log(Level.SEVERE, null, t);
+          }
+          Runtime.getRuntime().halt(1);
+        }).start();
         jdp.shutdown();
       }
 
@@ -220,9 +228,7 @@ public class Frame extends javax.swing.JFrame {
       while (true) {
         try {
           dataOwner.localData.set((String) Toolkit.getDefaultToolkit().getSystemClipboard().getData(DataFlavor.stringFlavor));
-        } catch (UnsupportedFlavorException ex) {
-          Logger.getLogger(Frame.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (IOException ex) {
+        } catch (Throwable ex) {
           Logger.getLogger(Frame.class.getName()).log(Level.SEVERE, null, ex);
         }
         try {

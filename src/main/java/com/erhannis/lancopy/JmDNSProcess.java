@@ -26,6 +26,8 @@ import javafx.collections.ObservableMap;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
+import xyz.gianlu.zeroconf.Service;
+import xyz.gianlu.zeroconf.Zeroconf;
 
 public class JmDNSProcess {
   private static class LCListener implements ServiceListener {
@@ -69,6 +71,8 @@ public class JmDNSProcess {
   private final WsClient wsClient;
 
   private final JmDNS jmdns;
+  private final Zeroconf zeroconf;
+  private final Service zcService;
 
   private JmDNSProcess(DataOwner dataOwner) {
     this.dataOwner = dataOwner;
@@ -110,13 +114,26 @@ public class JmDNSProcess {
       }
     });
 
+    Zeroconf zeroconf0 = null;
+    Service zcService0 = null;
+    try {
+      zeroconf0 = new Zeroconf();
+      zeroconf0.addAllNetworkInterfaces()
+               .setUseIpv4(true)
+               .setUseIpv6(false);
+
+      zcService0 = new Service(ID, "lancopy", PORT);
+      zeroconf0.announce(zcService0);
+    } catch (IOException ex) {
+      Logger.getLogger(JmDNSProcess.class.getName()).log(Level.SEVERE, null, ex);
+    }
+    this.zeroconf = zeroconf0;
+    this.zcService = zcService0;
+
     JmDNS jmdns0 = null;
     try {
       // Create a JmDNS instance
       jmdns0 = JmDNS.create(InetAddress.getLocalHost());
-
-      ServiceInfo serviceInfo = ServiceInfo.create("_lancopy._tcp.local.", ID, PORT, "");
-      jmdns0.registerService(serviceInfo);
 
       jmdns0.addServiceListener("_lancopy._tcp.local.", new LCListener(dataOwner, ID, wsClient));
     } catch (IOException e) {
@@ -146,5 +163,7 @@ public class JmDNSProcess {
   public void shutdown() {
     jmdns.unregisterAllServices();
     wsClient.shutdown();
+    zeroconf.unannounce(zcService);
+    zeroconf.close();
   }
 }
