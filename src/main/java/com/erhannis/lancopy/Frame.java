@@ -417,6 +417,7 @@ public class Frame extends javax.swing.JFrame {
             + "Open LanCopy on both computers A and B.  Copy text on A, click \"Post clipboard\",\n"
             + "then on B, double-click A's node to pull the data over and into B's clipboard.\n"
             + "You can click \"Post files...\", or drag files onto the window, to post files.\n"
+            + "Pulling files copies their new path into your clipboard, for convenience.\n"
             + "Checking \"Loop clipboard\" will cause the clipboard to be checked every second\n"
             + "for change, and any changes to be broadcast.  The checkbox state is saved if\n"
             + "program is shut down normally, by default.\n"
@@ -444,7 +445,6 @@ public class Frame extends javax.swing.JFrame {
         pd.setVisible(true);
         Data data = jdp.pullFromNode(nl.id);
         //System.out.println("rx data: " + data);
-        System.err.println("//TODO Handle binary data");
         if (data instanceof TextData) {
           taLoadedData.setText(((TextData) data).text);
           Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(((TextData) data).text), null);
@@ -456,13 +456,22 @@ public class Frame extends javax.swing.JFrame {
             File f = fileChooser.getSelectedFile();
             FileUtils.copyInputStreamToFile(((BinaryData) data).stream, f);
             taLoadedData.setText(((BinaryData) data).toString());
+            try {
+              Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(f.getParentFile().getAbsolutePath()), null);
+            } catch (Throwable t) {
+              // Nevermind
+            }
           } else {
             throw new RuntimeException("File save canceled");
           }
         } else if (data instanceof FilesData) {
-          taLoadedData.setText(((FilesData) data).toString());
-          System.err.println("//TODO Copy file locations?");
-          //Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(((ErrorData) data).text), null);
+          FilesData fd = ((FilesData) data);
+          taLoadedData.setText(fd.toLongString());
+          try {
+            Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(fd.files[0].getParentFile().getAbsolutePath()), null);
+          } catch (Throwable t) {
+            // Nevermind
+          }
           //System.err.println("//TODO Save files");
         } else {
           throw new RuntimeException("Unhandled data type");

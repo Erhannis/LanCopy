@@ -73,6 +73,22 @@ public class FilesData extends Data {
     return "[files] {" + String.join(", ", subtexts) + "}";
   }
 
+  public String toLongString() {
+    String[] subtexts = new String[files.length+1];
+    subtexts[0] = "[files]";
+    if (files.length > 0) {
+      try {
+        subtexts[0] = "[files]\n"+files[0].getParentFile().getAbsolutePath()+"\n----";
+      } catch (Throwable t) {
+        // Nevermind
+      }
+    }
+    for (int i = 0; i < files.length; i++) {
+      subtexts[i+1] = files[i] + " (" + files[i].length() + ")";
+    }
+    return String.join("\n", subtexts);
+  }
+  
   private static class PathedFile {
     public final String path;
     public final File file;
