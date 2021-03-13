@@ -426,7 +426,7 @@ public class Frame extends javax.swing.JFrame {
             + "Only a summary of data is broadcast, until a node requests the full data.\n"
             + "\n"
             + "Beware, there is basically zero security on this.  It's unencrypted, and\n"
-            + "unauthenticated.\n"
+            + "unauthenticated.  It is shouting your posts for the whole local network to see.\n"
             + "\n"
             + "Erhannis, 2021\n"
             + "MIT License\n"
