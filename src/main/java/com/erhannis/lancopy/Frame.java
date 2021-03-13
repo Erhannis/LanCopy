@@ -83,7 +83,7 @@ public class Frame extends javax.swing.JFrame {
         modelServices.addElement(new NodeLine(entry.getKey(), entry.getValue()));
       }
     });
-
+    
     this.addWindowListener(new WindowListener() {
       @Override
       public void windowClosing(WindowEvent e) {
@@ -241,6 +241,9 @@ public class Frame extends javax.swing.JFrame {
     listServices = new javax.swing.JList<>();
     jLabel1 = new javax.swing.JLabel();
     jMenuBar1 = new javax.swing.JMenuBar();
+    jMenu1 = new javax.swing.JMenu();
+    miPostClipboard = new javax.swing.JMenuItem();
+    miPostFiles = new javax.swing.JMenuItem();
     jMenu3 = new javax.swing.JMenu();
     miAbout = new javax.swing.JMenuItem();
 
@@ -391,6 +394,28 @@ public class Frame extends javax.swing.JFrame {
 
     jSplitPane1.setRightComponent(jSplitPane3);
 
+    jMenu1.setText("Actions");
+
+    miPostClipboard.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_V, java.awt.event.InputEvent.CTRL_MASK));
+    miPostClipboard.setText("Post clipboard");
+    miPostClipboard.addActionListener(new java.awt.event.ActionListener() {
+      public void actionPerformed(java.awt.event.ActionEvent evt) {
+        miPostClipboardActionPerformed(evt);
+      }
+    });
+    jMenu1.add(miPostClipboard);
+
+    miPostFiles.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_O, java.awt.event.InputEvent.CTRL_MASK));
+    miPostFiles.setText("Post files...");
+    miPostFiles.addActionListener(new java.awt.event.ActionListener() {
+      public void actionPerformed(java.awt.event.ActionEvent evt) {
+        miPostFilesActionPerformed(evt);
+      }
+    });
+    jMenu1.add(miPostFiles);
+
+    jMenuBar1.add(jMenu1);
+
     jMenu3.setText("Help");
 
     miAbout.setText("About");
@@ -426,6 +451,9 @@ public class Frame extends javax.swing.JFrame {
   }//GEN-LAST:event_listServicesMouseClicked
 
   private void btnSendClipboardActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSendClipboardActionPerformed
+    if (!btnSendClipboard.isEnabled()) {
+      return;
+    }
     try {
       dataOwner.localData.set(new TextData((String) Toolkit.getDefaultToolkit().getSystemClipboard().getData(DataFlavor.stringFlavor)));
     } catch (UnsupportedFlavorException ex) {
@@ -438,6 +466,9 @@ public class Frame extends javax.swing.JFrame {
   public final JFileChooser fileChooser = new JFileChooser();
 
   private void btnPostFilesActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnPostFilesActionPerformed
+    if (!btnPostFiles.isEnabled()) {
+      return;
+    }
     fileChooser.setMultiSelectionEnabled(true);
     if (fileChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
       dataOwner.localData.set(new FilesData(fileChooser.getSelectedFiles()));
@@ -460,6 +491,8 @@ public class Frame extends javax.swing.JFrame {
             + "You can click \"Post files...\", or drag files onto the window, to post files.\n"
             + "Pulling files copies their new path into your clipboard, for convenience.\n"
             + "You can also drag text onto the window to post it.\n"
+            + "And there are ctrl-v, ctrl-o shortcuts to post clipboard and post files,\n"
+            + "respectively, though they're a little finnicky.\n"
             + "Checking \"Loop clipboard\" will cause the clipboard to be checked every second\n"
             + "for change, and any changes to be broadcast.  The checkbox state is saved if\n"
             + "program is shut down normally, by default.\n"
@@ -476,6 +509,14 @@ public class Frame extends javax.swing.JFrame {
             "About",
             JOptionPane.INFORMATION_MESSAGE);
   }//GEN-LAST:event_miAboutActionPerformed
+
+  private void miPostClipboardActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_miPostClipboardActionPerformed
+    btnSendClipboardActionPerformed(evt);
+  }//GEN-LAST:event_miPostClipboardActionPerformed
+
+  private void miPostFilesActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_miPostFilesActionPerformed
+    btnPostFilesActionPerformed(evt);
+  }//GEN-LAST:event_miPostFilesActionPerformed
 
   private void pullFromNode() {
     NodeLine nl = listServices.getSelectedValue();
@@ -577,6 +618,7 @@ public class Frame extends javax.swing.JFrame {
   private javax.swing.JLabel jLabel1;
   private javax.swing.JLabel jLabel2;
   private javax.swing.JLabel jLabel3;
+  private javax.swing.JMenu jMenu1;
   private javax.swing.JMenu jMenu3;
   private javax.swing.JMenuBar jMenuBar1;
   private javax.swing.JPanel jPanel1;
@@ -589,6 +631,8 @@ public class Frame extends javax.swing.JFrame {
   private javax.swing.JSplitPane jSplitPane3;
   private javax.swing.JList<NodeLine> listServices;
   private javax.swing.JMenuItem miAbout;
+  private javax.swing.JMenuItem miPostClipboard;
+  private javax.swing.JMenuItem miPostFiles;
   private javax.swing.JTextArea taLoadedData;
   private javax.swing.JTextArea taPostedData;
   // End of variables declaration//GEN-END:variables
