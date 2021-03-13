@@ -34,6 +34,7 @@ import javax.swing.DefaultListModel;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.JProgressBar;
+import org.apache.commons.io.FileUtils;
 
 /**
  *
@@ -417,26 +418,30 @@ public class Frame extends javax.swing.JFrame {
             + "then on B, double-click A's node to pull the data over and into B's clipboard.\n"
             + "You can click \"Post files...\", or drag files onto the window, to post files.\n"
             + "Checking \"Loop clipboard\" will cause the clipboard to be checked every second\n"
-            + "for change, and any changes to be broadcast.\n"
+            + "for change, and any changes to be broadcast.  The checkbox state is saved if\n"
+            + "program is shut down normally, by default.\n"
+            + "See settings.xml for a few settings.\n"
             + "\n"
             + "Only a summary of data is broadcast, until a node requests the full data.\n"
+            + "\n"
             + "Beware, there is basically zero security on this.  It's unencrypted, and\n"
             + "unauthenticated.\n"
             + "\n"
             + "Erhannis, 2021\n"
             + "MIT License\n"
-            + "https://github.com/Erhannis/LanCopy");
+            + "https://github.com/Erhannis/LanCopy",
+              "About",
+              JOptionPane.INFORMATION_MESSAGE);
   }//GEN-LAST:event_miAboutActionPerformed
 
   private void pullFromNode() {
     NodeLine nl = listServices.getSelectedValue();
     if (nl != null) {
-      System.out.println("asdf 0");
-      ProgressDialog pd = new ProgressDialog(this, "<html>asdfasdfasdfasdfasdfasdfasdasdfasdf<br/>qwerqwerqwerqw</html>");
-      System.out.println("asdf 1");
+      ProgressDialog pd = new ProgressDialog(this, false, "Pulling data...", "Hang on");
       try {
+        //TODO This is not airtight; drag-n-drop still works, for instance
+        this.setEnabled(false);
         pd.setVisible(true);
-        System.out.println("asdf 2");
         Data data = jdp.pullFromNode(nl.id);
         //System.out.println("rx data: " + data);
         System.err.println("//TODO Handle binary data");
@@ -447,7 +452,13 @@ public class Frame extends javax.swing.JFrame {
           taLoadedData.setText(((ErrorData) data).text);
           Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(((ErrorData) data).text), null);
         } else if (data instanceof BinaryData) {
-          throw new RuntimeException("Unhandled data type: binary");
+          if (fileChooser.showSaveDialog(null) == JFileChooser.APPROVE_OPTION) {
+            File f = fileChooser.getSelectedFile();
+            FileUtils.copyInputStreamToFile(((BinaryData) data).stream, f);
+            taLoadedData.setText(((BinaryData) data).toString());
+          } else {
+            throw new RuntimeException("File save canceled");
+          }
         } else if (data instanceof FilesData) {
           taLoadedData.setText(((FilesData) data).toString());
           System.err.println("//TODO Copy file locations?");
@@ -461,9 +472,9 @@ public class Frame extends javax.swing.JFrame {
         taLoadedData.setText("ERROR: " + ex.getMessage());
       } finally {
         if (pd != null) {
-          System.out.println("asdf 3");
           pd.setVisible(false);
           pd.dispose();
+          this.setEnabled(true);
         }
       }
     }
