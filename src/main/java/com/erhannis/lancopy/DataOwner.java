@@ -32,6 +32,8 @@ public class DataOwner {
   
   public boolean cachedSettingLoopClipboard = false;
   public boolean cachedSettingSaveSettingsOnExit = true;
+  public String cachedSettingDefaultSavePath = "";
+  public String cachedSettingDefaultOpenPath = "";
   
   public DataOwner() {
     localData.subscribe((data) -> {
@@ -51,6 +53,8 @@ public class DataOwner {
       props.setProperty("SUMMARY_LENGTH", ""+SUMMARY_LENGTH);
       props.setProperty("LOOP_CLIPBOARD", ""+cachedSettingLoopClipboard);
       props.setProperty("SAVE_SETTINGS_ON_EXIT", ""+cachedSettingSaveSettingsOnExit);
+      props.setProperty("DEFAULT_SAVE_PATH", ""+cachedSettingDefaultSavePath);
+      props.setProperty("DEFAULT_OPEN_PATH", ""+cachedSettingDefaultOpenPath);
       props.storeToXML(new FileOutputStream("settings.xml"), "");
     } catch (FileNotFoundException ex) {
       Logger.getLogger(DataOwner.class.getName()).log(Level.SEVERE, null, ex);
@@ -67,6 +71,8 @@ public class DataOwner {
       SUMMARY_LENGTH = Integer.parseInt(props.getProperty("SUMMARY_LENGTH", ""+SUMMARY_LENGTH));
       cachedSettingLoopClipboard = Boolean.parseBoolean(props.getProperty("LOOP_CLIPBOARD", ""+cachedSettingLoopClipboard));
       cachedSettingSaveSettingsOnExit = Boolean.parseBoolean(props.getProperty("SAVE_SETTINGS_ON_EXIT", ""+cachedSettingSaveSettingsOnExit));
+      cachedSettingDefaultSavePath = props.getProperty("DEFAULT_SAVE_PATH", ""+cachedSettingDefaultSavePath);
+      cachedSettingDefaultOpenPath = props.getProperty("DEFAULT_OPEN_PATH", ""+cachedSettingDefaultOpenPath);
     } catch (FileNotFoundException ex) {
       Logger.getLogger(DataOwner.class.getName()).log(Level.SEVERE, null, ex);
     } catch (IOException ex) {

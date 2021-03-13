@@ -160,7 +160,7 @@ public class FilesData extends Data {
             new ByteArrayInputStream(baos.toByteArray()));
   }
 
-  private static JFileChooser fileChooser = new JFileChooser();
+  public static JFileChooser fileChooser = new JFileChooser();
   
   public synchronized static Data deserialize(InputStream stream) {
     try {

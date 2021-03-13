@@ -72,6 +72,10 @@ public class Frame extends javax.swing.JFrame {
     DefaultListModel<NodeLine> modelServices = new DefaultListModel<>();
     listServices.setModel(modelServices);
 
+    if (dataOwner.cachedSettingDefaultOpenPath != null && !dataOwner.cachedSettingDefaultOpenPath.trim().isEmpty()) {
+      this.fileChooser.setCurrentDirectory(new File(dataOwner.cachedSettingDefaultOpenPath.trim()));
+    }
+
     dataOwner.localData.subscribeWithGet(data -> {
       taPostedData.setText("" + data);
     });
@@ -578,6 +582,9 @@ public class Frame extends javax.swing.JFrame {
   public static void main(String args[]) {
     final DataOwner dataOwner = new DataOwner();
     dataOwner.loadSettings();
+    if (dataOwner.cachedSettingDefaultSavePath != null && !dataOwner.cachedSettingDefaultSavePath.trim().isEmpty()) {
+      FilesData.fileChooser.setCurrentDirectory(new File(dataOwner.cachedSettingDefaultSavePath.trim()));
+    }
     final JmDNSProcess jdp = JmDNSProcess.start(dataOwner);
 
 //    /* Set the Nimbus look and feel */
