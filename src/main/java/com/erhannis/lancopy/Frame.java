@@ -18,6 +18,7 @@ import java.awt.datatransfer.StringSelection;
 import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.dnd.DnDConstants;
 import java.awt.dnd.DropTarget;
+import java.awt.dnd.DropTargetDragEvent;
 import java.awt.dnd.DropTargetDropEvent;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
@@ -126,24 +127,64 @@ public class Frame extends javax.swing.JFrame {
     });
 
     DropTarget dt = new DropTarget() {
-      //TODO Might be nice to hint acceptance
+      private boolean checkDropOk(DropTargetDropEvent e) {
+        if (e.isDataFlavorSupported(DataFlavor.stringFlavor) || e.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
+          e.acceptDrop(DnDConstants.ACTION_COPY);
+          return true;
+        }
+        e.rejectDrop();
+        return false;
+      }
 
+      private boolean checkDragOk(DropTargetDragEvent e) {
+        if (e.isDataFlavorSupported(DataFlavor.stringFlavor) || e.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
+          e.acceptDrag(DnDConstants.ACTION_COPY);
+          return true;
+        }
+        e.rejectDrag();
+        return false;
+      }
+
+      public void dragEnter(DropTargetDragEvent e) {
+        checkDragOk(e);
+      }
+
+      public void dragOver(DropTargetDragEvent e) {
+        checkDragOk(e);
+      }
+
+      public void dropActionChanged(DropTargetDragEvent e) {
+        checkDragOk(e);
+      }
+
+      @Override
       public synchronized void drop(DropTargetDropEvent evt) {
         if (cbLoopClipboard.isSelected()) {
           return;
         }
-        if (evt.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
-          evt.acceptDrop(DnDConstants.ACTION_COPY);
-        } else {
+        if (!checkDropOk(evt)) {
           return;
         }
-        try {
-          List<File> droppedFiles = (List<File>) evt.getTransferable().getTransferData(DataFlavor.javaFileListFlavor);
-          System.out.println("Dropped files: " + droppedFiles);
-          dataOwner.localData.set(new FilesData(droppedFiles.toArray(new File[]{})));
-          evt.dropComplete(true);
-        } catch (Exception ex) {
-          ex.printStackTrace();
+        if (evt.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
+          try {
+            List<File> droppedFiles = (List<File>) evt.getTransferable().getTransferData(DataFlavor.javaFileListFlavor);
+            System.out.println("Dropped files: " + droppedFiles);
+            dataOwner.localData.set(new FilesData(droppedFiles.toArray(new File[]{})));
+            evt.dropComplete(true);
+          } catch (Exception ex) {
+            ex.printStackTrace();
+          }
+        } else if (evt.isDataFlavorSupported(DataFlavor.stringFlavor)) {
+          evt.acceptDrop(DnDConstants.ACTION_COPY);
+
+          try {
+            String droppedString = (String) evt.getTransferable().getTransferData(DataFlavor.stringFlavor);
+            System.out.println("Dropped string: " + droppedString);
+            dataOwner.localData.set(new TextData(droppedString));
+            evt.dropComplete(true);
+          } catch (Exception ex) {
+            ex.printStackTrace();
+          }
         }
       }
     };
@@ -413,11 +454,12 @@ public class Frame extends javax.swing.JFrame {
 
   private void miAboutActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_miAboutActionPerformed
     JOptionPane.showMessageDialog(null,
-              "Double click to pull a connected computer's clipboard.\n"
+            "Double click to pull a connected computer's clipboard.\n"
             + "Open LanCopy on both computers A and B.  Copy text on A, click \"Post clipboard\",\n"
             + "then on B, double-click A's node to pull the data over and into B's clipboard.\n"
             + "You can click \"Post files...\", or drag files onto the window, to post files.\n"
             + "Pulling files copies their new path into your clipboard, for convenience.\n"
+            + "You can also drag text onto the window to post it.\n"
             + "Checking \"Loop clipboard\" will cause the clipboard to be checked every second\n"
             + "for change, and any changes to be broadcast.  The checkbox state is saved if\n"
             + "program is shut down normally, by default.\n"
@@ -431,8 +473,8 @@ public class Frame extends javax.swing.JFrame {
             + "Erhannis, 2021\n"
             + "MIT License\n"
             + "https://github.com/Erhannis/LanCopy",
-              "About",
-              JOptionPane.INFORMATION_MESSAGE);
+            "About",
+            JOptionPane.INFORMATION_MESSAGE);
   }//GEN-LAST:event_miAboutActionPerformed
 
   private void pullFromNode() {
