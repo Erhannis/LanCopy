@@ -125,9 +125,9 @@ public class JmDNSProcess {
     Service zcService0 = null;
     try {
       zeroconf0 = new Zeroconf();
-      zeroconf0.addAllNetworkInterfaces()
-               .setUseIpv4(true)
-               .setUseIpv6(false);
+      zeroconf0.setUseIpv4(true)
+               .setUseIpv6(false)
+               .addAllNetworkInterfaces();
 
       zcService0 = new Service(ID, "lancopy", PORT);
       zeroconf0.announce(zcService0);
