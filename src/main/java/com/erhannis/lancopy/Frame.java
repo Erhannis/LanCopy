@@ -44,16 +44,22 @@ import org.apache.commons.io.FileUtils;
 public class Frame extends javax.swing.JFrame {
   private static class NodeLine {
     public final String id;
-    public final String summary;
+    public final NodeInfo info;
 
-    public NodeLine(String id, String summary) {
+    public NodeLine(String id, NodeInfo info) {
       this.id = id;
-      this.summary = summary;
+      this.info = info;
     }
 
     @Override
     public String toString() {
-      return id + " - " + summary;
+      switch (info.active) {
+        case ACTIVE:
+          return id + " - " + info.summary;
+        case INACTIVE:
+        default:
+          return "X "+ id + " - " + info.summary;
+      }
     }
   }
 
@@ -67,7 +73,7 @@ public class Frame extends javax.swing.JFrame {
     initComponents();
     this.dataOwner = dataOwner;
     this.jdp = jdp;
-    this.setTitle(jdp.ID);
+    this.setTitle(dataOwner.ID);
     this.cbLoopClipboard.setSelected(dataOwner.cachedSettingLoopClipboard);
     DefaultListModel<NodeLine> modelServices = new DefaultListModel<>();
     listServices.setModel(modelServices);
@@ -80,10 +86,10 @@ public class Frame extends javax.swing.JFrame {
       taPostedData.setText("" + data);
     });
 
-    dataOwner.remoteSummaries.subscribeWithGet((Change<String, String> change) -> {
+    dataOwner.remoteNodes.subscribeWithGet((Change<String, NodeInfo> change) -> {
       //TODO Make efficient
       modelServices.clear();
-      for (Entry<String, String> entry : dataOwner.remoteSummaries.get().entrySet()) {
+      for (Entry<String, NodeInfo> entry : dataOwner.remoteNodes.get().entrySet()) {
         modelServices.addElement(new NodeLine(entry.getKey(), entry.getValue()));
       }
     });
@@ -531,6 +537,7 @@ public class Frame extends javax.swing.JFrame {
         this.setEnabled(false);
         pd.setVisible(true);
         Data data = jdp.pullFromNode(nl.id);
+        dataOwner.observedNode(new NodeInfo(nl.info.id, nl.info.url, nl.info.summary, NodeInfo.State.ACTIVE));
         //System.out.println("rx data: " + data);
         if (data instanceof TextData) {
           taLoadedData.setText(((TextData) data).text);
