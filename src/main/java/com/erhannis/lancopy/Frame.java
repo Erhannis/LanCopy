@@ -106,6 +106,7 @@ public class Frame extends javax.swing.JFrame {
                             //TODO Creating a false Summary makes me uncomfortable
                             summarys.put(ad.id, new Summary(ad.id, System.currentTimeMillis(), "???"));
                         }
+                        uii.subscribeOut.write(ad.comms);
                         break;
                     case 1: // commStatusIn
                         Pair<Comm, Boolean> status = uii.commStatusIn.read();
