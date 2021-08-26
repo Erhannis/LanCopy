@@ -9,6 +9,7 @@ import com.erhannis.lancopy.data.BinaryData;
 import com.erhannis.lancopy.data.Data;
 import com.erhannis.lancopy.data.ErrorData;
 import com.erhannis.lancopy.data.FilesData;
+import com.erhannis.lancopy.data.NoData;
 import com.erhannis.lancopy.data.TextData;
 import com.erhannis.lancopy.refactor.Advertisement;
 import com.erhannis.lancopy.refactor.Comm;
@@ -34,6 +35,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.InetAddress;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
@@ -44,9 +46,11 @@ import javax.swing.DefaultListModel;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.JProgressBar;
+import javax.swing.SwingUtilities;
 import jcsp.lang.Alternative;
 import jcsp.lang.Guard;
 import jcsp.lang.ProcessManager;
+import okio.Buffer;
 import org.apache.commons.io.FileUtils;
 
 /**
@@ -119,10 +123,13 @@ public class Frame extends javax.swing.JFrame {
                         break;
                 }
                 //TODO Make efficient
-                modelServices.clear();
-                for (Entry<String, Summary> entry : summarys.entrySet()) {
-                    modelServices.addElement(new NodeLine(entry.getValue()));
-                }
+                final HashMap<String, Summary> scopy = new HashMap<>(summarys);
+                SwingUtilities.invokeLater(() -> {
+                    modelServices.clear();
+                    for (Entry<String, Summary> entry : scopy.entrySet()) {
+                        modelServices.addElement(new NodeLine(entry.getValue()));
+                    }
+                });
             }
         }).start();
 
@@ -613,6 +620,9 @@ public class Frame extends javax.swing.JFrame {
                     case "lancopy/files":
                         data = FilesData.deserialize(result.b);
                         break;
+                    case "lancopy/nodata":
+                        data = NoData.deserialize(result.b);
+                        break;
                     default:
                         data = new ErrorData("Unhandled MIME: " + result.a);
                         break;
@@ -651,6 +661,9 @@ public class Frame extends javax.swing.JFrame {
                         // Nevermind
                     }
                     //System.err.println("//TODO Save files");
+                } else if (data instanceof NoData) {
+                    taLoadedData.setText(((NoData) data).toString());
+                    Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(((NoData) data).toString()), null);
                 } else {
                     throw new RuntimeException("Unhandled data type");
                 }
@@ -708,7 +721,7 @@ public class Frame extends javax.swing.JFrame {
             }
         });
     }
-
+    
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnPostFiles;
     private javax.swing.JButton btnSendClipboard;

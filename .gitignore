@@ -4,4 +4,4 @@ dist/
 target/
 **~
 /settings.xml
-/settings.dat
+/options.dat
