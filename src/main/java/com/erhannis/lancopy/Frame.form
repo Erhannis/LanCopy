@@ -35,7 +35,7 @@
         </Menu>
         <Menu class="javax.swing.JMenu" name="jMenu2">
           <Properties>
-            <Property name="text" type="java.lang.String" value="Edit"/>
+            <Property name="text" type="java.lang.String" value="Windows"/>
           </Properties>
           <SubComponents>
             <MenuItem class="javax.swing.JMenuItem" name="miOptions">
@@ -44,6 +44,14 @@
               </Properties>
               <Events>
                 <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="miOptionsActionPerformed"/>
+              </Events>
+            </MenuItem>
+            <MenuItem class="javax.swing.JMenuItem" name="miComms">
+              <Properties>
+                <Property name="text" type="java.lang.String" value="Comms..."/>
+              </Properties>
+              <Events>
+                <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="miCommsActionPerformed"/>
               </Events>
             </MenuItem>
           </SubComponents>

@@ -37,9 +37,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetAddress;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.DefaultListModel;
@@ -75,6 +78,8 @@ public class Frame extends javax.swing.JFrame {
 
     private final DataOwner dataOwner;
     private final LanCopyNet.UiInterface uii;
+    private ConcurrentLinkedDeque<CommsFrame> commsFrames = new ConcurrentLinkedDeque<>();
+    private ConcurrentHashMap<Comm, Boolean> commStatus = new ConcurrentHashMap<>();
 
     /**
      * Creates new form Frame
@@ -104,23 +109,48 @@ public class Frame extends javax.swing.JFrame {
             while (true) {
                 switch (alt.fairSelect()) {
                     case 0: // adIn
+                    {
                         Advertisement ad = uii.adIn.read();
                         System.out.println("UI rx " + ad);
                         if (!summarys.containsKey(ad.id)) {
                             //TODO Creating a false Summary makes me uncomfortable
                             summarys.put(ad.id, new Summary(ad.id, System.currentTimeMillis(), "???"));
                         }
+                        Iterator<CommsFrame> cfi = commsFrames.iterator();
+                        while (cfi.hasNext()) {
+                            CommsFrame cf = cfi.next();
+                            if (cf.isDisplayable()) {
+                                cf.update(ad);
+                            } else {
+                                cfi.remove();
+                            }
+                        }
                         uii.subscribeOut.write(ad.comms);
                         break;
+                    }
                     case 1: // commStatusIn
+                    {
                         Pair<Comm, Boolean> status = uii.commStatusIn.read();
+                        commStatus.put(status.a, status.b);
                         System.out.println("UI rx " + status);
+                        Iterator<CommsFrame> cfi = commsFrames.iterator();
+                        while (cfi.hasNext()) {
+                            CommsFrame cf = cfi.next();
+                            if (cf.isDisplayable()) {
+                                cf.update(status);
+                            } else {
+                                cfi.remove();
+                            }
+                        }
                         break;
+                    }
                     case 2: // summaryIn
+                    {
                         Summary summary = uii.summaryIn.read();
                         System.out.println("UI rx " + summary);
                         summarys.put(summary.id, summary);
                         break;
+                    }
                 }
                 //TODO Make efficient
                 final HashMap<String, Summary> scopy = new HashMap<>(summarys);
@@ -310,6 +340,7 @@ public class Frame extends javax.swing.JFrame {
         miPostFiles = new javax.swing.JMenuItem();
         jMenu2 = new javax.swing.JMenu();
         miOptions = new javax.swing.JMenuItem();
+        miComms = new javax.swing.JMenuItem();
         jMenu3 = new javax.swing.JMenu();
         miAbout = new javax.swing.JMenuItem();
 
@@ -482,7 +513,7 @@ public class Frame extends javax.swing.JFrame {
 
         jMenuBar1.add(jMenu1);
 
-        jMenu2.setText("Edit");
+        jMenu2.setText("Windows");
 
         miOptions.setText("Options...");
         miOptions.addActionListener(new java.awt.event.ActionListener() {
@@ -491,6 +522,14 @@ public class Frame extends javax.swing.JFrame {
             }
         });
         jMenu2.add(miOptions);
+
+        miComms.setText("Comms...");
+        miComms.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                miCommsActionPerformed(evt);
+            }
+        });
+        jMenu2.add(miComms);
 
         jMenuBar1.add(jMenu2);
 
@@ -599,6 +638,19 @@ public class Frame extends javax.swing.JFrame {
     private void miOptionsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_miOptionsActionPerformed
         new OptionsFrame(dataOwner.options, OptionsFrame.DEFAULT_OPTIONS_FILENAME).setVisible(true);
     }//GEN-LAST:event_miOptionsActionPerformed
+
+    private void miCommsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_miCommsActionPerformed
+        CommsFrame cf = new CommsFrame();
+        cf.setVisible(true);
+        commsFrames.add(cf);
+        for (Advertisement ad : uii.rosterCall.call(null)) {
+            cf.update(ad);
+        }
+        //TODO Tighten race condition here between subscription and overwriting new with old
+        for (Entry<Comm, Boolean> state : commStatus.entrySet()) {
+            cf.update(Pair.gen(state.getKey(), state.getValue()));
+        }
+    }//GEN-LAST:event_miCommsActionPerformed
 
     private void pullFromNode() {
         NodeLine nl = listServices.getSelectedValue();
@@ -743,6 +795,7 @@ public class Frame extends javax.swing.JFrame {
     private javax.swing.JSplitPane jSplitPane3;
     private javax.swing.JList<NodeLine> listServices;
     private javax.swing.JMenuItem miAbout;
+    private javax.swing.JMenuItem miComms;
     private javax.swing.JMenuItem miOptions;
     private javax.swing.JMenuItem miPostClipboard;
     private javax.swing.JMenuItem miPostFiles;
