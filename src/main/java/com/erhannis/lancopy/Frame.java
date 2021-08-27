@@ -36,6 +36,11 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -662,27 +667,31 @@ public class Frame extends javax.swing.JFrame {
                 pd.setVisible(true);
                 Pair<String, InputStream> result = uii.dataCall.call(uii.adCall.call(nl.summary.id).comms);
                 Data data;
-                switch (result.a) {
-                    case "text/plain":
-                        data = TextData.deserialize(result.b);
-                        break;
-                    case "application/octet-stream":
-                        data = BinaryData.deserialize(result.b);
-                        break;
-                    case "lancopy/files":
-                        data = FilesData.deserialize(result.b);
-                        break;
-                    case "lancopy/nodata":
-                        data = NoData.deserialize(result.b);
-                        break;
-                    default:
-                        data = new ErrorData("Unhandled MIME: " + result.a);
-                        break;
-                }
-                try {
-                    result.b.close();
-                } catch (Throwable t) {
-                    t.printStackTrace();
+                if (result == null) {
+                    data = new ErrorData("Node could not be reached");
+                } else {
+                    switch (result.a) {
+                        case "text/plain":
+                            data = TextData.deserialize(result.b);
+                            break;
+                        case "application/octet-stream":
+                            data = BinaryData.deserialize(result.b);
+                            break;
+                        case "lancopy/files":
+                            data = FilesData.deserialize(result.b);
+                            break;
+                        case "lancopy/nodata":
+                            data = NoData.deserialize(result.b);
+                            break;
+                        default:
+                            data = new ErrorData("Unhandled MIME: " + result.a);
+                            break;
+                    }
+                    try {
+                        result.b.close();
+                    } catch (Throwable t) {
+                        t.printStackTrace();
+                    }
                 }
                 //System.out.println("rx data: " + data);
                 if (data instanceof TextData) {
@@ -773,7 +782,7 @@ public class Frame extends javax.swing.JFrame {
             }
         });
     }
-    
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnPostFiles;
     private javax.swing.JButton btnSendClipboard;

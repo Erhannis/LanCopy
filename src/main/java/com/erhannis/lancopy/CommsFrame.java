@@ -7,26 +7,55 @@ package com.erhannis.lancopy;
 
 import com.erhannis.lancopy.refactor.Advertisement;
 import com.erhannis.lancopy.refactor.Comm;
+import com.erhannis.mathnstuff.MeUtils;
 import com.erhannis.mathnstuff.Pair;
-import com.erhannis.mathnstuff.Stringable;
+import java.awt.Color;
+import java.awt.Component;
+import java.security.SecureRandom;
 import java.util.HashMap;
-import javax.swing.DefaultListModel;
+import javax.swing.JComponent;
+import javax.swing.JTree;
 import javax.swing.SwingUtilities;
 import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
-import javax.swing.tree.TreeNode;
 
 /**
  *
  * @author erhannis
  */
 public class CommsFrame extends javax.swing.JFrame {
-    public static class CommLabel {
+    public static class ColoredLine {
+        public static final Color RED = MeUtils.interpolateColors(Color.RED, Color.WHITE, 0.5);
+        public static final Color GREEN = MeUtils.interpolateColors(Color.GREEN, Color.WHITE, 0.5);
+        public static final Color BLUE = MeUtils.interpolateColors(Color.BLUE, Color.WHITE, 0.5);
+        public static final Color GREY = Color.GRAY;
+        public Color color = GREY;
+    }
+    
+    public static class CommLabel extends ColoredLine {
         private final Comm comm;
-        public Boolean state = null;
+        private Boolean state = null;
 
+        private static SecureRandom r = new SecureRandom();
+        
         public CommLabel(Comm comm) {
             this.comm = comm;
+        }
+        
+        public Boolean getState() {
+            return state;
+        }
+        
+        public void setState(Boolean state) {
+            this.state = state;
+            if (state == null) {
+                this.color = ColoredLine.GREY;
+            } else if (state == true) {
+                this.color = ColoredLine.GREEN;
+            } else if (state == false) {
+                this.color = ColoredLine.RED;
+            }
         }
 
         @Override
@@ -46,6 +75,26 @@ public class CommsFrame extends javax.swing.JFrame {
      */
     public CommsFrame() {
         initComponents();
+        treeNodes.setCellRenderer(new DefaultTreeCellRenderer(){
+            @Override
+            public Component getTreeCellRendererComponent(JTree tree, Object value, boolean sel, boolean expanded, boolean leaf, int row, boolean hasFocus) {
+                JComponent c = (JComponent) super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus);
+                c.setOpaque(false);
+                if (value instanceof DefaultMutableTreeNode) {
+                    DefaultMutableTreeNode node = (DefaultMutableTreeNode) value;
+                    if (node.getUserObject() instanceof ColoredLine) {
+                        ColoredLine line = (ColoredLine) node.getUserObject();
+                        if (sel) {
+                            c.setBackground(MeUtils.interpolateColors(line.color, Color.WHITE, 0.5));
+                        } else {
+                            c.setBackground(line.color);
+                        }
+                        c.setOpaque(true);
+                    }
+                }
+                return c;
+            }
+        });
     }
 
     public void update(Advertisement ad) {
@@ -81,7 +130,7 @@ public class CommsFrame extends javax.swing.JFrame {
         SwingUtilities.invokeLater(() -> {
             CommLabel commLabel = comm2label.get(commStatus.a);
             if (commLabel != null) {
-                commLabel.state = commStatus.b;
+                commLabel.setState(commStatus.b);
             }
             ////TODO Overkill
             modelNodes.nodeStructureChanged(root);
