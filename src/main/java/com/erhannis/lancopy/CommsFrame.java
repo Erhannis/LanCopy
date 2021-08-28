@@ -7,6 +7,7 @@ package com.erhannis.lancopy;
 
 import com.erhannis.lancopy.refactor.Advertisement;
 import com.erhannis.lancopy.refactor.Comm;
+import com.erhannis.mathnstuff.FactoryHashMap;
 import com.erhannis.mathnstuff.MeUtils;
 import com.erhannis.mathnstuff.Pair;
 import java.awt.Color;
@@ -64,10 +65,15 @@ public class CommsFrame extends javax.swing.JFrame {
         }
     }
 
-    private DefaultMutableTreeNode root = new DefaultMutableTreeNode("asdf");
+    private DefaultMutableTreeNode root = new DefaultMutableTreeNode("Nodes");
     private DefaultTreeModel modelNodes = new DefaultTreeModel(root);
 
-    private HashMap<String, DefaultMutableTreeNode> id2node = new HashMap<>();
+    private HashMap<String, DefaultMutableTreeNode> id2adNode = new HashMap<>();
+    private FactoryHashMap<String, HashMap<String, DefaultMutableTreeNode>> id2typeNodes = new FactoryHashMap<>((s) -> {
+        return new HashMap<>();
+    });
+    
+    
     private HashMap<Comm, CommLabel> comm2label = new HashMap<>();
 
     /**
@@ -100,19 +106,28 @@ public class CommsFrame extends javax.swing.JFrame {
     public void update(Advertisement ad) {
         SwingUtilities.invokeLater(() -> {
             DefaultMutableTreeNode adNode;
-            if (id2node.containsKey(ad.id)) {
-                adNode = id2node.get(ad.id);
+            if (id2adNode.containsKey(ad.id)) {
+                adNode = id2adNode.get(ad.id);
             } else {
                 adNode = new DefaultMutableTreeNode(ad);
                 root.add(adNode);
-                id2node.put(ad.id, adNode);
+                id2adNode.put(ad.id, adNode);
             }
             //TODO Remove removed comms
             for (Comm comm : ad.comms) {
                 if (!comm2label.containsKey(comm)) {
                     CommLabel commLabel = new CommLabel(comm);
                     DefaultMutableTreeNode commNode = new DefaultMutableTreeNode(commLabel);
-                    adNode.add(commNode);
+                    
+                    HashMap<String, DefaultMutableTreeNode> typeNodes = id2typeNodes.get(ad.id);
+                    DefaultMutableTreeNode typeNode = typeNodes.get(comm.type);
+                    if (typeNode == null) {
+                        typeNode = new DefaultMutableTreeNode(comm.type);
+                        adNode.add(typeNode);
+                        typeNodes.put(comm.type, typeNode);
+                    }
+                    
+                    typeNode.add(commNode);
                     comm2label.put(comm, commLabel);
                 }
             }
@@ -128,9 +143,28 @@ public class CommsFrame extends javax.swing.JFrame {
     
     public void update(Pair<Comm, Boolean> commStatus) {
         SwingUtilities.invokeLater(() -> {
-            CommLabel commLabel = comm2label.get(commStatus.a);
+            Comm comm = commStatus.a;
+            CommLabel commLabel = comm2label.get(comm);
             if (commLabel != null) {
                 commLabel.setState(commStatus.b);
+            } else {
+                comm.equals(comm);
+                System.out.println("Wasn't sure if this code would get called");
+                commLabel = new CommLabel(comm);
+                commLabel.setState(commStatus.b);
+                
+                DefaultMutableTreeNode commNode = new DefaultMutableTreeNode(commLabel);
+
+                HashMap<String, DefaultMutableTreeNode> typeNodes = id2typeNodes.get(comm.owner.id);
+                DefaultMutableTreeNode typeNode = typeNodes.get(comm.type);
+                if (typeNode == null) {
+                    typeNode = new DefaultMutableTreeNode(comm.type);
+                    id2adNode.get(comm.owner.id).add(typeNode);
+                    typeNodes.put(comm.type, typeNode);
+                }
+
+                typeNode.add(commNode);
+                comm2label.put(comm, commLabel);
             }
             ////TODO Overkill
             modelNodes.nodeStructureChanged(root);
