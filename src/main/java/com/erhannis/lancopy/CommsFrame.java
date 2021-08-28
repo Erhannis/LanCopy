@@ -12,42 +12,53 @@ import com.erhannis.mathnstuff.MeUtils;
 import com.erhannis.mathnstuff.Pair;
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.event.KeyEvent;
 import java.security.SecureRandom;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.swing.JComponent;
 import javax.swing.JTree;
 import javax.swing.SwingUtilities;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreePath;
+import jcsp.lang.ChannelOutput;
 
 /**
  *
  * @author erhannis
  */
 public class CommsFrame extends javax.swing.JFrame {
+
     public static class ColoredLine {
+
         public static final Color RED = MeUtils.interpolateColors(Color.RED, Color.WHITE, 0.5);
         public static final Color GREEN = MeUtils.interpolateColors(Color.GREEN, Color.WHITE, 0.5);
         public static final Color BLUE = MeUtils.interpolateColors(Color.BLUE, Color.WHITE, 0.5);
         public static final Color GREY = Color.GRAY;
         public Color color = GREY;
     }
-    
+
     public static class CommLabel extends ColoredLine {
+
         private final Comm comm;
         private Boolean state = null;
 
         private static SecureRandom r = new SecureRandom();
-        
+
         public CommLabel(Comm comm) {
             this.comm = comm;
         }
-        
+
         public Boolean getState() {
             return state;
         }
-        
+
         public void setState(Boolean state) {
             this.state = state;
             if (state == null) {
@@ -72,16 +83,18 @@ public class CommsFrame extends javax.swing.JFrame {
     private FactoryHashMap<String, HashMap<String, DefaultMutableTreeNode>> id2typeNodes = new FactoryHashMap<>((s) -> {
         return new HashMap<>();
     });
-    
-    
     private HashMap<Comm, CommLabel> comm2label = new HashMap<>();
+
+    private final ChannelOutput<Collection<Comm>> pokeOut;
 
     /**
      * Creates new form CommsFrame
      */
-    public CommsFrame() {
+    public CommsFrame(ChannelOutput<Collection<Comm>> pokeOut) {
+        this.pokeOut = pokeOut;
+
         initComponents();
-        treeNodes.setCellRenderer(new DefaultTreeCellRenderer(){
+        treeNodes.setCellRenderer(new DefaultTreeCellRenderer() {
             @Override
             public Component getTreeCellRendererComponent(JTree tree, Object value, boolean sel, boolean expanded, boolean leaf, int row, boolean hasFocus) {
                 JComponent c = (JComponent) super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus);
@@ -118,7 +131,7 @@ public class CommsFrame extends javax.swing.JFrame {
                 if (!comm2label.containsKey(comm)) {
                     CommLabel commLabel = new CommLabel(comm);
                     DefaultMutableTreeNode commNode = new DefaultMutableTreeNode(commLabel);
-                    
+
                     HashMap<String, DefaultMutableTreeNode> typeNodes = id2typeNodes.get(ad.id);
                     DefaultMutableTreeNode typeNode = typeNodes.get(comm.type);
                     if (typeNode == null) {
@@ -126,7 +139,7 @@ public class CommsFrame extends javax.swing.JFrame {
                         adNode.add(typeNode);
                         typeNodes.put(comm.type, typeNode);
                     }
-                    
+
                     typeNode.add(commNode);
                     comm2label.put(comm, commLabel);
                 }
@@ -140,7 +153,7 @@ public class CommsFrame extends javax.swing.JFrame {
             treeNodes.repaint();
         });
     }
-    
+
     public void update(Pair<Comm, Boolean> commStatus) {
         SwingUtilities.invokeLater(() -> {
             Comm comm = commStatus.a;
@@ -152,7 +165,7 @@ public class CommsFrame extends javax.swing.JFrame {
                 System.out.println("Wasn't sure if this code would get called");
                 commLabel = new CommLabel(comm);
                 commLabel.setState(commStatus.b);
-                
+
                 DefaultMutableTreeNode commNode = new DefaultMutableTreeNode(commLabel);
 
                 HashMap<String, DefaultMutableTreeNode> typeNodes = id2typeNodes.get(comm.owner.id);
@@ -189,8 +202,20 @@ public class CommsFrame extends javax.swing.JFrame {
         treeNodes = new javax.swing.JTree();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
+        setTitle("Comms");
 
         treeNodes.setModel(modelNodes      );
+        treeNodes.setToolTipText("Dbl click or hit enter to test selected comms");
+        treeNodes.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                treeNodesMouseClicked(evt);
+            }
+        });
+        treeNodes.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                treeNodesKeyPressed(evt);
+            }
+        });
         jScrollPane1.setViewportView(treeNodes);
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
@@ -213,40 +238,38 @@ public class CommsFrame extends javax.swing.JFrame {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-    /**
-     * @param args the command line arguments
-     */
-    public static void main(String args[]) {
-        /* Set the Nimbus look and feel */
-        //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
-        /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
-         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
-         */
-        try {
-            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
-                if ("Nimbus".equals(info.getName())) {
-                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
-                    break;
+    private void pokeSelected() {
+        List<Comm> comms = new LinkedList<Comm>();
+        TreePath[] selected = treeNodes.getSelectionPaths();
+        if (selected == null) {
+            return;
+        }
+        for (int i = 0; i < selected.length; i++) {
+            TreePath path = (TreePath) selected[i];
+            Object object = path.getLastPathComponent();
+            if (object instanceof DefaultMutableTreeNode) {
+                DefaultMutableTreeNode node = (DefaultMutableTreeNode) object;
+                if (node.getUserObject() instanceof CommLabel) {
+                    CommLabel label = (CommLabel) node.getUserObject();
+                    label.setState(null);
+                    comms.add(label.comm);
                 }
             }
-        } catch (ClassNotFoundException ex) {
-            java.util.logging.Logger.getLogger(CommsFrame.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (InstantiationException ex) {
-            java.util.logging.Logger.getLogger(CommsFrame.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (IllegalAccessException ex) {
-            java.util.logging.Logger.getLogger(CommsFrame.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (javax.swing.UnsupportedLookAndFeelException ex) {
-            java.util.logging.Logger.getLogger(CommsFrame.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
-        //</editor-fold>
-
-        /* Create and display the form */
-        java.awt.EventQueue.invokeLater(new Runnable() {
-            public void run() {
-                new CommsFrame().setVisible(true);
-            }
-        });
+        pokeOut.write(comms);
     }
+
+    private void treeNodesMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_treeNodesMouseClicked
+        if (evt.getClickCount() >= 2) {
+            pokeSelected();
+        }
+    }//GEN-LAST:event_treeNodesMouseClicked
+
+    private void treeNodesKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_treeNodesKeyPressed
+        if (evt.getKeyCode() == KeyEvent.VK_ENTER) {
+            pokeSelected();
+        }
+    }//GEN-LAST:event_treeNodesKeyPressed
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JScrollPane jScrollPane1;
