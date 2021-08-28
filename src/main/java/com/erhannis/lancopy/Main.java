@@ -5,11 +5,8 @@
  */
 package com.erhannis.lancopy;
 
-import com.erhannis.mathnstuff.utils.ObservableMap;
-import com.erhannis.mathnstuff.utils.ObservableMap.Change;
+import com.martiansoftware.jsap.JSAPException;
 import java.io.IOException;
-import java.util.HashMap;
-import javax.jmdns.JmDNS;
 
 /**
  *
@@ -19,7 +16,7 @@ public class Main {
   /**
    * @param args the command line arguments
    */
-  public static void main(String[] args) throws InterruptedException, IOException {    
+  public static void main(String[] args) throws InterruptedException, IOException, JSAPException {
     Frame.main(args);
   }
 }

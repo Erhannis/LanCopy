@@ -18,8 +18,15 @@ import com.erhannis.lancopy.refactor.Summary;
 import com.erhannis.mathnstuff.Pair;
 import com.erhannis.mathnstuff.components.OptionsFrame;
 import com.erhannis.mathnstuff.components.ProgressDialog;
-import com.erhannis.mathnstuff.utils.ObservableMap.Change;
 import com.erhannis.mathnstuff.utils.Options;
+import com.martiansoftware.jsap.JSAP;
+import com.martiansoftware.jsap.JSAPException;
+import com.martiansoftware.jsap.JSAPResult;
+import com.martiansoftware.jsap.Parameter;
+import com.martiansoftware.jsap.ParseException;
+import com.martiansoftware.jsap.SimpleJSAP;
+import com.martiansoftware.jsap.Switch;
+import com.martiansoftware.jsap.UnflaggedOption;
 import java.awt.Toolkit;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.StringSelection;
@@ -31,21 +38,13 @@ import java.awt.dnd.DropTargetDropEvent;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.InetAddress;
-import java.net.NetworkInterface;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
-import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.logging.Level;
@@ -53,12 +52,10 @@ import java.util.logging.Logger;
 import javax.swing.DefaultListModel;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
-import javax.swing.JProgressBar;
 import javax.swing.SwingUtilities;
 import jcsp.lang.Alternative;
 import jcsp.lang.Guard;
 import jcsp.lang.ProcessManager;
-import okio.Buffer;
 import org.apache.commons.io.FileUtils;
 
 /**
@@ -89,7 +86,7 @@ public class Frame extends javax.swing.JFrame {
     /**
      * Creates new form Frame
      */
-    public Frame(LanCopyNet.UiInterface uii) {
+    public Frame(LanCopyNet.UiInterface uii, Data initialData) {
         initComponents();
         this.dataOwner = uii.dataOwner;
         this.uii = uii;
@@ -101,6 +98,10 @@ public class Frame extends javax.swing.JFrame {
         String openPath = (String) dataOwner.options.getOrDefault("DEFAULT_OPEN_PATH", "");
         if (openPath != null && !openPath.trim().isEmpty()) {
             this.fileChooser.setCurrentDirectory(new File(openPath.trim()));
+        }
+        
+        if (initialData != null) {
+            setData(initialData);
         }
 
         new ProcessManager(() -> {
@@ -744,13 +745,54 @@ public class Frame extends javax.swing.JFrame {
     /**
      * @param args the command line arguments
      */
-    public static void main(String args[]) throws InterruptedException, IOException {
+    public static void main(String args[]) throws InterruptedException, IOException, ParseException, JSAPException {
+        SimpleJSAP jsap = new SimpleJSAP(
+                "LanCopy",
+                "Send files and text from one computer to another nearby with minimum effort.",
+                new Parameter[]{
+                    new Switch("help2", 'h', null, "Print help."),
+                    new Switch("clipboard", 'c', "clipboard", "Post clipboard on start."),
+                    new UnflaggedOption("files", JSAP.STRING_PARSER, null, JSAP.NOT_REQUIRED, JSAP.GREEDY,
+                            "Zero or more files to post on start.")
+                }
+        );
+
+        JSAPResult config = jsap.parse(args);
+        if (jsap.messagePrinted()) {
+            System.exit(1);
+        }
+        if (config.getBoolean("help2")) {
+            System.out.println(jsap.getHelp());
+            System.exit(0);
+        }
+
+        String[] files = config.getStringArray("files");
+        boolean clipboard = config.getBoolean("clipboard");
+
         final DataOwner dataOwner = new DataOwner();
         String savePath = (String) dataOwner.options.getOrDefault("DEFAULT_SAVE_PATH", "");
         if (savePath != null && !savePath.trim().isEmpty()) {
             FilesData.fileChooser.setCurrentDirectory(new File(savePath.trim()));
         }
         final LanCopyNet.UiInterface uii = LanCopyNet.startNet();
+
+        final Data data;
+        if (files.length > 0) {
+            System.out.println("Dropped files: " + files);
+            data = new FilesData(Arrays.asList(files).stream().map(s -> new File(s)).toArray(n -> new File[n]));
+        } else if (clipboard) {
+            Data data0 = null;
+            try {
+                data0 = new TextData((String) Toolkit.getDefaultToolkit().getSystemClipboard().getData(DataFlavor.stringFlavor));
+            } catch (UnsupportedFlavorException ex) {
+                Logger.getLogger(Frame.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (IOException ex) {
+                Logger.getLogger(Frame.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            data = data0;
+        } else {
+            data = null;
+        }
 
 //    /* Set the Nimbus look and feel */
 //    
@@ -778,7 +820,7 @@ public class Frame extends javax.swing.JFrame {
         /* Create and display the form */
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
-                new Frame(uii).setVisible(true);
+                new Frame(uii, data).setVisible(true);
             }
         });
     }
