@@ -347,6 +347,7 @@ public class Frame extends javax.swing.JFrame {
         jMenu2 = new javax.swing.JMenu();
         miOptions = new javax.swing.JMenuItem();
         miComms = new javax.swing.JMenuItem();
+        miManualUrls = new javax.swing.JMenuItem();
         jMenu3 = new javax.swing.JMenu();
         miAbout = new javax.swing.JMenuItem();
 
@@ -537,6 +538,14 @@ public class Frame extends javax.swing.JFrame {
         });
         jMenu2.add(miComms);
 
+        miManualUrls.setText("Manual urls...");
+        miManualUrls.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                miManualUrlsActionPerformed(evt);
+            }
+        });
+        jMenu2.add(miManualUrls);
+
         jMenuBar1.add(jMenu2);
 
         jMenu3.setText("Help");
@@ -619,7 +628,7 @@ public class Frame extends javax.swing.JFrame {
               + "Checking \"Loop clipboard\" will cause the clipboard to be checked every second\n"
               + "for change, and any changes to be broadcast.  The checkbox state is saved if\n"
               + "program is shut down normally, by default.\n"
-              + "See settings.xml for a few settings.\n"
+              + "See \"Options...\" for options, most recently accessed first.\n"
               + "\n"
               + "Only a summary of data is broadcast, until a node requests the full data.\n"
               + "\n"
@@ -657,6 +666,10 @@ public class Frame extends javax.swing.JFrame {
             cf.update(Pair.gen(state.getKey(), state.getValue()));
         }
     }//GEN-LAST:event_miCommsActionPerformed
+
+    private void miManualUrlsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_miManualUrlsActionPerformed
+        new UrlFrame(uii.adCall.call(dataOwner.ID)).setVisible(true);
+    }//GEN-LAST:event_miManualUrlsActionPerformed
 
     private void pullFromNode() {
         NodeLine nl = listServices.getSelectedValue();
@@ -847,6 +860,7 @@ public class Frame extends javax.swing.JFrame {
     private javax.swing.JList<NodeLine> listServices;
     private javax.swing.JMenuItem miAbout;
     private javax.swing.JMenuItem miComms;
+    private javax.swing.JMenuItem miManualUrls;
     private javax.swing.JMenuItem miOptions;
     private javax.swing.JMenuItem miPostClipboard;
     private javax.swing.JMenuItem miPostFiles;
