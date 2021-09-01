@@ -110,7 +110,7 @@ public class Frame extends javax.swing.JFrame {
             List<Advertisement> roster = uii.rosterCall.call(null);
             for (Advertisement ad : roster) {
                 //TODO Creating a false Summary makes me uncomfortable
-                summarys.put(ad.id, new Summary(ad.id, System.currentTimeMillis(), "???"));
+                summarys.put(ad.id, new Summary(ad.id, ad.timestamp, "???"));
             }
             while (true) {
                 switch (alt.fairSelect()) {
@@ -120,7 +120,7 @@ public class Frame extends javax.swing.JFrame {
                         System.out.println("UI rx " + ad);
                         if (!summarys.containsKey(ad.id)) {
                             //TODO Creating a false Summary makes me uncomfortable
-                            summarys.put(ad.id, new Summary(ad.id, System.currentTimeMillis(), "???"));
+                            summarys.put(ad.id, new Summary(ad.id, ad.timestamp, "???"));
                         }
                         Iterator<CommsFrame> cfi = commsFrames.iterator();
                         while (cfi.hasNext()) {
