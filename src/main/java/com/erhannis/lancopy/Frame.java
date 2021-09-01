@@ -629,6 +629,8 @@ public class Frame extends javax.swing.JFrame {
               + "for change, and any changes to be broadcast.  The checkbox state is saved if\n"
               + "program is shut down normally, by default.\n"
               + "See \"Options...\" for options, most recently accessed first.\n"
+              + "See \"Manual urls...\" for a list of URLs from which to fetch local data,\n"
+              + "from e.g. a browser.\n"
               + "\n"
               + "Only a summary of data is broadcast, until a node requests the full data.\n"
               + "\n"
