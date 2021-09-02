@@ -1,1 +1,2 @@
-manually ad an ad
+manually add an ad
+color-code nodes

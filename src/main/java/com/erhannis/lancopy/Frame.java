@@ -97,7 +97,11 @@ public class Frame extends javax.swing.JFrame {
 
         String openPath = (String) dataOwner.options.getOrDefault("DEFAULT_OPEN_PATH", "");
         if (openPath != null && !openPath.trim().isEmpty()) {
-            this.fileChooser.setCurrentDirectory(new File(openPath.trim()));
+            this.fileOpenChooser.setCurrentDirectory(new File(openPath.trim()));
+        }
+        String savePath = (String) dataOwner.options.getOrDefault("DEFAULT_SAVE_PATH", "");
+        if (savePath != null && !savePath.trim().isEmpty()) {
+            this.fileSaveChooser.setCurrentDirectory(new File(savePath.trim()));
         }
         
         if (initialData != null) {
@@ -595,15 +599,16 @@ public class Frame extends javax.swing.JFrame {
       }
   }//GEN-LAST:event_btnSendClipboardActionPerformed
 
-    public final JFileChooser fileChooser = new JFileChooser();
+  public final JFileChooser fileOpenChooser = new JFileChooser();
+  public final JFileChooser fileSaveChooser = new JFileChooser();
 
   private void btnPostFilesActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnPostFilesActionPerformed
       if (!btnPostFiles.isEnabled()) {
           return;
       }
-      fileChooser.setMultiSelectionEnabled(true);
-      if (fileChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
-          setData(new FilesData(fileChooser.getSelectedFiles()));
+      fileOpenChooser.setMultiSelectionEnabled(true);
+      if (fileOpenChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+          setData(new FilesData(fileOpenChooser.getSelectedFiles()));
       }
   }//GEN-LAST:event_btnPostFilesActionPerformed
 
@@ -694,7 +699,15 @@ public class Frame extends javax.swing.JFrame {
                             data = BinaryData.deserialize(result.b);
                             break;
                         case "lancopy/files":
-                            data = FilesData.deserialize(result.b);
+                            data = FilesData.deserialize(result.b, filename -> {
+                                File f = new File(filename);
+                                fileSaveChooser.setSelectedFile(f);
+                                if (fileSaveChooser.showSaveDialog(null) == JFileChooser.APPROVE_OPTION) {
+                                  return fileSaveChooser.getSelectedFile();
+                                } else {
+                                  return null;
+                                }
+                            });
                             break;
                         case "lancopy/nodata":
                             data = NoData.deserialize(result.b);
@@ -717,8 +730,8 @@ public class Frame extends javax.swing.JFrame {
                     taLoadedData.setText(((ErrorData) data).text);
                     Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(((ErrorData) data).text), null);
                 } else if (data instanceof BinaryData) {
-                    if (fileChooser.showSaveDialog(null) == JFileChooser.APPROVE_OPTION) {
-                        File f = fileChooser.getSelectedFile();
+                    if (fileOpenChooser.showSaveDialog(null) == JFileChooser.APPROVE_OPTION) {
+                        File f = fileOpenChooser.getSelectedFile();
                         FileUtils.copyInputStreamToFile(((BinaryData) data).stream, f);
                         taLoadedData.setText(((BinaryData) data).toString());
                         try {
@@ -785,10 +798,6 @@ public class Frame extends javax.swing.JFrame {
         boolean clipboard = config.getBoolean("clipboard");
 
         final LanCopyNet.UiInterface uii = LanCopyNet.startNet();
-        String savePath = (String) uii.dataOwner.options.getOrDefault("DEFAULT_SAVE_PATH", "");
-        if (savePath != null && !savePath.trim().isEmpty()) {
-            FilesData.fileChooser.setCurrentDirectory(new File(savePath.trim()));
-        }
 
         final Data data;
         if (files.length > 0) {
