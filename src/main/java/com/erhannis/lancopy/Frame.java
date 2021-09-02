@@ -784,12 +784,11 @@ public class Frame extends javax.swing.JFrame {
         String[] files = config.getStringArray("files");
         boolean clipboard = config.getBoolean("clipboard");
 
-        final DataOwner dataOwner = new DataOwner();
-        String savePath = (String) dataOwner.options.getOrDefault("DEFAULT_SAVE_PATH", "");
+        final LanCopyNet.UiInterface uii = LanCopyNet.startNet();
+        String savePath = (String) uii.dataOwner.options.getOrDefault("DEFAULT_SAVE_PATH", "");
         if (savePath != null && !savePath.trim().isEmpty()) {
             FilesData.fileChooser.setCurrentDirectory(new File(savePath.trim()));
         }
-        final LanCopyNet.UiInterface uii = LanCopyNet.startNet();
 
         final Data data;
         if (files.length > 0) {
