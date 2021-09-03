@@ -15,6 +15,7 @@ import com.erhannis.lancopy.refactor.Advertisement;
 import com.erhannis.lancopy.refactor.Comm;
 import com.erhannis.lancopy.refactor.LanCopyNet;
 import com.erhannis.lancopy.refactor.Summary;
+import com.erhannis.mathnstuff.MeUtils;
 import com.erhannis.mathnstuff.Pair;
 import com.erhannis.mathnstuff.components.OptionsFrame;
 import com.erhannis.mathnstuff.components.ProgressDialog;
@@ -40,10 +41,13 @@ import java.awt.event.WindowListener;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
@@ -164,11 +168,30 @@ public class Frame extends javax.swing.JFrame {
                 }
                 //TODO Make efficient
                 final HashMap<String, Summary> scopy = new HashMap<>(summarys);
+                
+                ArrayList<NodeLine> nodeLines = new ArrayList<>();
+                for (Map.Entry<String, Summary> entry : scopy.entrySet()) {
+                    nodeLines.add(new NodeLine(entry.getValue()));
+                }
+                int sorting = (int) uii.dataOwner.options.getOrDefault("NodeList.SORT_BY_(TIMESTAMP|ID|SUMMARY)", 0);
+                switch (sorting) {
+                    case 0: // Timestamp
+                        Collections.sort(nodeLines, (o1, o2) -> -Long.compare(o1.summary.timestamp, o2.summary.timestamp));
+                        break;
+                    case 1: // Id
+                        Collections.sort(nodeLines, (o1, o2) -> MeUtils.compare(o1.summary.id, o2.summary.id));
+                        break;
+                    case 2: // Summary
+                        Collections.sort(nodeLines, (o1, o2) -> MeUtils.compare(o1.summary.summary, o2.summary.summary));
+                        break;
+                }
+                
                 SwingUtilities.invokeLater(() -> {
                     modelServices.clear();
-                    for (Entry<String, Summary> entry : scopy.entrySet()) {
-                        modelServices.addElement(new NodeLine(entry.getValue()));
+                    for (NodeLine nl : nodeLines) {
+                        modelServices.addElement(nl);
                     }
+                    // Invalidate model or something?
                 });
             }
         }).start();
@@ -733,6 +756,7 @@ public class Frame extends javax.swing.JFrame {
                     if (fileOpenChooser.showSaveDialog(null) == JFileChooser.APPROVE_OPTION) {
                         File f = fileOpenChooser.getSelectedFile();
                         FileUtils.copyInputStreamToFile(((BinaryData) data).stream, f);
+                        ((BinaryData) data).stream.close();
                         taLoadedData.setText(((BinaryData) data).toString());
                         try {
                             Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(f.getParentFile().getAbsolutePath()), null);
