@@ -49,6 +49,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.logging.Level;
@@ -94,7 +95,7 @@ public class Frame extends javax.swing.JFrame {
         initComponents();
         this.dataOwner = uii.dataOwner;
         this.uii = uii;
-        this.setTitle(dataOwner.ID);
+        this.setTitle(dataOwner.ID.toString());
         this.cbLoopClipboard.setSelected((Boolean) dataOwner.options.getOrDefault("LOOP_CLIPBOARD", false));
         DefaultListModel<NodeLine> modelServices = new DefaultListModel<>();
         listServices.setModel(modelServices);
@@ -114,7 +115,7 @@ public class Frame extends javax.swing.JFrame {
 
         new ProcessManager(() -> {
             Alternative alt = new Alternative(new Guard[]{uii.adIn, uii.commStatusIn, uii.summaryIn});
-            HashMap<String, Summary> summarys = new HashMap<>();
+            HashMap<UUID, Summary> summarys = new HashMap<>();
             List<Advertisement> roster = uii.rosterCall.call(null);
             for (Advertisement ad : roster) {
                 //TODO Creating a false Summary makes me uncomfortable
@@ -167,10 +168,10 @@ public class Frame extends javax.swing.JFrame {
                     }
                 }
                 //TODO Make efficient
-                final HashMap<String, Summary> scopy = new HashMap<>(summarys);
+                final HashMap<UUID, Summary> scopy = new HashMap<>(summarys);
                 
                 ArrayList<NodeLine> nodeLines = new ArrayList<>();
-                for (Map.Entry<String, Summary> entry : scopy.entrySet()) {
+                for (Map.Entry<UUID, Summary> entry : scopy.entrySet()) {
                     nodeLines.add(new NodeLine(entry.getValue()));
                 }
                 int sorting = (int) uii.dataOwner.options.getOrDefault("NodeList.SORT_BY_(TIMESTAMP|ID|SUMMARY)", 0);
@@ -179,7 +180,7 @@ public class Frame extends javax.swing.JFrame {
                         Collections.sort(nodeLines, (o1, o2) -> -Long.compare(o1.summary.timestamp, o2.summary.timestamp));
                         break;
                     case 1: // Id
-                        Collections.sort(nodeLines, (o1, o2) -> MeUtils.compare(o1.summary.id, o2.summary.id));
+                        Collections.sort(nodeLines, (o1, o2) -> MeUtils.compare(o1.summary.id.toString(), o2.summary.id.toString()));
                         break;
                     case 2: // Summary
                         Collections.sort(nodeLines, (o1, o2) -> MeUtils.compare(o1.summary.summary, o2.summary.summary));

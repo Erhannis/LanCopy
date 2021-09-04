@@ -1,2 +1,4 @@
 manually add an ad
 color-code nodes
+summary limit
+bundle .apk?

@@ -18,6 +18,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.swing.JComponent;
@@ -79,8 +80,8 @@ public class CommsFrame extends javax.swing.JFrame {
     private DefaultMutableTreeNode root = new DefaultMutableTreeNode("Nodes");
     private DefaultTreeModel modelNodes = new DefaultTreeModel(root);
 
-    private HashMap<String, DefaultMutableTreeNode> id2adNode = new HashMap<>();
-    private FactoryHashMap<String, HashMap<String, DefaultMutableTreeNode>> id2typeNodes = new FactoryHashMap<>((s) -> {
+    private HashMap<UUID, DefaultMutableTreeNode> id2adNode = new HashMap<>();
+    private FactoryHashMap<UUID, HashMap<String, DefaultMutableTreeNode>> id2typeNodes = new FactoryHashMap<>((s) -> {
         return new HashMap<>();
     });
     private HashMap<Comm, CommLabel> comm2label = new HashMap<>();
