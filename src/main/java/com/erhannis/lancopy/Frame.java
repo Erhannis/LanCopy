@@ -41,6 +41,7 @@ import java.awt.event.WindowListener;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -372,6 +373,7 @@ public class Frame extends javax.swing.JFrame {
         jMenu1 = new javax.swing.JMenu();
         miPostClipboard = new javax.swing.JMenuItem();
         miPostFiles = new javax.swing.JMenuItem();
+        miPostLanCopy = new javax.swing.JMenuItem();
         jMenu2 = new javax.swing.JMenu();
         miOptions = new javax.swing.JMenuItem();
         miComms = new javax.swing.JMenuItem();
@@ -547,6 +549,14 @@ public class Frame extends javax.swing.JFrame {
         });
         jMenu1.add(miPostFiles);
 
+        miPostLanCopy.setText("Post LanCopy");
+        miPostLanCopy.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                miPostLanCopyActionPerformed(evt);
+            }
+        });
+        jMenu1.add(miPostLanCopy);
+
         jMenuBar1.add(jMenu1);
 
         jMenu2.setText("Windows");
@@ -718,6 +728,14 @@ public class Frame extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_miPullRosterActionPerformed
 
+    private void miPostLanCopyActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_miPostLanCopyActionPerformed
+        try {
+            setData(new FilesData(new File[]{new File(Frame.class.getProtectionDomain().getCodeSource().getLocation().toURI())}));
+        } catch (URISyntaxException ex) {
+            Logger.getLogger(Frame.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }//GEN-LAST:event_miPostLanCopyActionPerformed
+    
     private void pullFromNode() {
         NodeLine nl = listServices.getSelectedValue();
         if (nl != null) {
@@ -821,6 +839,7 @@ public class Frame extends javax.swing.JFrame {
                 new Parameter[]{
                     new Switch("help2", 'h', null, "Print help."),
                     new Switch("clipboard", 'c', "clipboard", "Post clipboard on start."),
+                    new Switch("self", 's', "self", "Post LanCopy on start."),
                     new UnflaggedOption("files", JSAP.STRING_PARSER, null, JSAP.NOT_REQUIRED, JSAP.GREEDY,
                             "Zero or more files to post on start.")
                 }
@@ -837,6 +856,7 @@ public class Frame extends javax.swing.JFrame {
 
         String[] files = config.getStringArray("files");
         boolean clipboard = config.getBoolean("clipboard");
+        boolean postSelf = config.getBoolean("self");
 
         final LanCopyNet.UiInterface uii = LanCopyNet.startNet();
 
@@ -851,6 +871,14 @@ public class Frame extends javax.swing.JFrame {
             } catch (UnsupportedFlavorException ex) {
                 Logger.getLogger(Frame.class.getName()).log(Level.SEVERE, null, ex);
             } catch (IOException ex) {
+                Logger.getLogger(Frame.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            data = data0;
+        } else if (postSelf) {
+            Data data0 = null;
+            try {
+                data0 = new FilesData(new File[]{new File(Frame.class.getProtectionDomain().getCodeSource().getLocation().toURI())});
+            } catch (URISyntaxException ex) {
                 Logger.getLogger(Frame.class.getName()).log(Level.SEVERE, null, ex);
             }
             data = data0;
@@ -915,6 +943,7 @@ public class Frame extends javax.swing.JFrame {
     private javax.swing.JMenuItem miOptions;
     private javax.swing.JMenuItem miPostClipboard;
     private javax.swing.JMenuItem miPostFiles;
+    private javax.swing.JMenuItem miPostLanCopy;
     private javax.swing.JMenuItem miPullRoster;
     private javax.swing.JTextArea taLoadedData;
     private javax.swing.JTextArea taPostedData;
