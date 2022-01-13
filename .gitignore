@@ -5,3 +5,5 @@ target/
 **~
 /settings.xml
 /options.dat
+*.ks
+*.ts

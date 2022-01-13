@@ -701,7 +701,7 @@ public class Frame extends javax.swing.JFrame {
   }//GEN-LAST:event_miPostFilesActionPerformed
 
     private void miOptionsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_miOptionsActionPerformed
-        new OptionsFrame(dataOwner.options, OptionsFrame.DEFAULT_OPTIONS_FILENAME).setVisible(true);
+        new OptionsFrame("Note: many of these options require a restart.", dataOwner.options, OptionsFrame.DEFAULT_OPTIONS_FILENAME).setVisible(true);
     }//GEN-LAST:event_miOptionsActionPerformed
 
     private void miCommsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_miCommsActionPerformed
