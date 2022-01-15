@@ -744,7 +744,7 @@ public class Frame extends javax.swing.JFrame {
                 //TODO This is not airtight; drag-n-drop still works, for instance
                 this.setEnabled(false);
                 pd.setVisible(true);
-                Pair<String, InputStream> result = uii.dataCall.call(uii.adCall.call(nl.summary.id).comms);
+                Pair<String, InputStream> result = uii.dataCall.call(nl.summary.id);
                 Data data;
                 if (result == null) {
                     data = new ErrorData("Node could not be reached");
