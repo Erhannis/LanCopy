@@ -745,76 +745,81 @@ public class Frame extends javax.swing.JFrame {
                 this.setEnabled(false);
                 pd.setVisible(true);
                 Pair<String, InputStream> result = uii.dataCall.call(nl.summary.id);
-                Data data;
-                if (result == null) {
-                    data = new ErrorData("Node could not be reached");
-                } else {
-                    switch (result.a) {
-                        case "text/plain":
-                            data = TextData.deserialize(result.b);
-                            break;
-                        case "application/octet-stream":
-                            data = BinaryData.deserialize(result.b);
-                            break;
-                        case "lancopy/files":
-                            data = FilesData.deserialize(result.b, filename -> {
-                                File f = new File(filename);
-                                fileSaveChooser.setSelectedFile(f);
-                                if (fileSaveChooser.showSaveDialog(null) == JFileChooser.APPROVE_OPTION) {
-                                  return fileSaveChooser.getSelectedFile();
-                                } else {
-                                  return null;
-                                }
-                            });
-                            break;
-                        case "lancopy/nodata":
-                            data = NoData.deserialize(result.b);
-                            break;
-                        default:
-                            data = new ErrorData("Unhandled MIME: " + result.a);
-                            break;
+                try { //[finally close stream]
+                    Data data;
+                    if (result == null) {
+                        data = new ErrorData("Node could not be reached");
+                    } else {
+                        switch (result.a) {
+                            case "text/plain":
+                                data = TextData.deserialize(result.b);
+                                break;
+                            case "application/octet-stream":
+                                data = BinaryData.deserialize(result.b);
+                                break;
+                            case "lancopy/files":
+                                data = FilesData.deserialize(result.b, filename -> {
+                                    File f = new File(filename);
+                                    fileSaveChooser.setSelectedFile(f);
+                                    if (fileSaveChooser.showSaveDialog(null) == JFileChooser.APPROVE_OPTION) {
+                                      return fileSaveChooser.getSelectedFile();
+                                    } else {
+                                      return null;
+                                    }
+                                });
+                                break;
+                            case "lancopy/nodata":
+                                data = NoData.deserialize(result.b);
+                                break;
+                            default:
+                                data = new ErrorData("Unhandled MIME: " + result.a);
+                                break;
+                        }
                     }
+                    //System.out.println("rx data: " + data);
+                    if (data instanceof TextData) {
+                        taLoadedData.setText(((TextData) data).text);
+                        Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(((TextData) data).text), null);
+                    } else if (data instanceof ErrorData) {
+                        taLoadedData.setText(((ErrorData) data).text);
+                        Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(((ErrorData) data).text), null);
+                    } else if (data instanceof BinaryData) {
+                        if (fileOpenChooser.showSaveDialog(null) == JFileChooser.APPROVE_OPTION) {
+                            File f = fileOpenChooser.getSelectedFile();
+                            System.out.println("--> copyInputStreamToFile");
+                            FileUtils.copyInputStreamToFile(((BinaryData) data).stream, f);
+                            System.out.println("<-- copyInputStreamToFile");
+                            ((BinaryData) data).stream.close();
+                            taLoadedData.setText(((BinaryData) data).toString());
+                            try {
+                                Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(f.getParentFile().getAbsolutePath()), null);
+                            } catch (Throwable t) {
+                                // Nevermind
+                            }
+                        } else {
+                            throw new RuntimeException("File save canceled");
+                        }
+                    } else if (data instanceof FilesData) {
+                        FilesData fd = ((FilesData) data);
+                        taLoadedData.setText(fd.toLongString());
+                        try {
+                            Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(fd.files[0].getParentFile().getAbsolutePath()), null);
+                        } catch (Throwable t) {
+                            // Nevermind
+                        }
+                        //System.err.println("//TODO Save files");
+                    } else if (data instanceof NoData) {
+                        taLoadedData.setText(((NoData) data).toString());
+                        Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(((NoData) data).toString()), null);
+                    } else {
+                        throw new RuntimeException("Unhandled data type");
+                    }
+                } finally {
                     try {
                         result.b.close();
                     } catch (Throwable t) {
                         t.printStackTrace();
                     }
-                }
-                //System.out.println("rx data: " + data);
-                if (data instanceof TextData) {
-                    taLoadedData.setText(((TextData) data).text);
-                    Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(((TextData) data).text), null);
-                } else if (data instanceof ErrorData) {
-                    taLoadedData.setText(((ErrorData) data).text);
-                    Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(((ErrorData) data).text), null);
-                } else if (data instanceof BinaryData) {
-                    if (fileOpenChooser.showSaveDialog(null) == JFileChooser.APPROVE_OPTION) {
-                        File f = fileOpenChooser.getSelectedFile();
-                        FileUtils.copyInputStreamToFile(((BinaryData) data).stream, f);
-                        ((BinaryData) data).stream.close();
-                        taLoadedData.setText(((BinaryData) data).toString());
-                        try {
-                            Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(f.getParentFile().getAbsolutePath()), null);
-                        } catch (Throwable t) {
-                            // Nevermind
-                        }
-                    } else {
-                        throw new RuntimeException("File save canceled");
-                    }
-                } else if (data instanceof FilesData) {
-                    FilesData fd = ((FilesData) data);
-                    taLoadedData.setText(fd.toLongString());
-                    try {
-                        Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(fd.files[0].getParentFile().getAbsolutePath()), null);
-                    } catch (Throwable t) {
-                        // Nevermind
-                    }
-                    //System.err.println("//TODO Save files");
-                } else if (data instanceof NoData) {
-                    taLoadedData.setText(((NoData) data).toString());
-                    Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(((NoData) data).toString()), null);
-                } else {
-                    throw new RuntimeException("Unhandled data type");
                 }
             } catch (IOException ex) {
                 Logger.getLogger(Frame.class.getName()).log(Level.SEVERE, null, ex);
