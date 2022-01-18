@@ -863,7 +863,22 @@ public class Frame extends javax.swing.JFrame {
         boolean clipboard = config.getBoolean("clipboard");
         boolean postSelf = config.getBoolean("self");
 
-        final LanCopyNet.UiInterface uii = LanCopyNet.startNet();
+        LanCopyNet.UiInterface[] uii0 = new LanCopyNet.UiInterface[1];
+        
+        final LanCopyNet.UiInterface uii = LanCopyNet.startNet((msg) -> {
+            String localFingerprint = "UNKNOWN";
+            LanCopyNet.UiInterface luii = uii0[0];
+            if (luii != null) {
+                localFingerprint = luii.dataOwner.tlsContext.sha256Fingerprint;
+            }
+            msg = msg + "\n\n" + "Local fingerprint is\n" + localFingerprint;
+            if (JOptionPane.showConfirmDialog(null, msg, "Security error", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE) == JOptionPane.YES_OPTION) {
+                return true;
+            } else {
+                return false;
+            }
+        });
+        uii0[0] = uii;
 
         final Data data;
         if (files.length > 0) {
