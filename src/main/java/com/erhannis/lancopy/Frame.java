@@ -118,7 +118,7 @@ public class Frame extends javax.swing.JFrame {
         }
 
         new ProcessManager(() -> {
-            Alternative alt = new Alternative(new Guard[]{uii.adIn, uii.commStatusIn, uii.summaryIn});
+            Alternative alt = new Alternative(new Guard[]{uii.adIn, uii.commStatusIn, uii.summaryIn, uii.showLocalFingerprintIn});
             HashMap<UUID, Summary> summarys = new HashMap<>();
             List<Advertisement> roster = uii.rosterCall.call(null);
             for (Advertisement ad : roster) {
@@ -168,6 +168,14 @@ public class Frame extends javax.swing.JFrame {
                         Summary summary = uii.summaryIn.read();
                         System.out.println("UI rx " + summary);
                         summarys.put(summary.id, summary);
+                        break;
+                    }
+                    case 3: { // showLocalFingerprintIn
+                        uii.showLocalFingerprintIn.read();
+                        boolean show = (boolean) uii.dataOwner.options.getOrDefault("TLS.SHOW_LOCAL_FINGERPRINT", true);
+                        if (show) {
+                            JOptionPane.showMessageDialog(null, "An incoming connection has paused, presumably for fingerprint verification.\nThe local TLS fingerprint is:\n" + uii.dataOwner.tlsContext.sha256Fingerprint, "Security: Local fingerprint", JOptionPane.INFORMATION_MESSAGE);
+                        }
                         break;
                     }
                 }
