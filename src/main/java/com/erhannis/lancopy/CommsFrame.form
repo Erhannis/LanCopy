@@ -54,7 +54,7 @@
             <Property name="model" type="javax.swing.tree.TreeModel" editor="org.netbeans.modules.form.RADConnectionPropertyEditor">
               <Connection code="modelNodes      " type="code"/>
             </Property>
-            <Property name="toolTipText" type="java.lang.String" value="Dbl click or hit enter to test selected comms.  +ctrl to subscribe."/>
+            <Property name="toolTipText" type="java.lang.String" value="Dbl click or hit enter to connect to selected comms."/>
           </Properties>
           <Events>
             <EventHandler event="mouseClicked" listener="java.awt.event.MouseListener" parameters="java.awt.event.MouseEvent" handler="treeNodesMouseClicked"/>

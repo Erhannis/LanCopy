@@ -705,7 +705,7 @@ public class Frame extends javax.swing.JFrame {
     }//GEN-LAST:event_miOptionsActionPerformed
 
     private void miCommsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_miCommsActionPerformed
-        CommsFrame cf = new CommsFrame(uii.pokeOut, uii.subscribeOut);
+        CommsFrame cf = new CommsFrame(uii.subscribeOut);
         cf.setVisible(true);
         commsFrames.add(cf);
         for (Advertisement ad : uii.rosterCall.call(null)) {

@@ -86,14 +86,12 @@ public class CommsFrame extends javax.swing.JFrame {
     });
     private HashMap<Comm, CommLabel> comm2label = new HashMap<>();
 
-    private final ChannelOutput<Collection<Comm>> pokeOut;
     private final ChannelOutput<List<Comm>> subscribeOut;
 
     /**
      * Creates new form CommsFrame
      */
-    public CommsFrame(ChannelOutput<Collection<Comm>> pokeOut, ChannelOutput<List<Comm>> subscribeOut) {
-        this.pokeOut = pokeOut;
+    public CommsFrame(ChannelOutput<List<Comm>> subscribeOut) {
         this.subscribeOut = subscribeOut;
 
         initComponents();
@@ -208,7 +206,7 @@ public class CommsFrame extends javax.swing.JFrame {
         setTitle("Comms");
 
         treeNodes.setModel(modelNodes      );
-        treeNodes.setToolTipText("Dbl click or hit enter to test selected comms.  +ctrl to subscribe.");
+        treeNodes.setToolTipText("Dbl click or hit enter to connect to selected comms.");
         treeNodes.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
                 treeNodesMouseClicked(evt);
@@ -241,7 +239,7 @@ public class CommsFrame extends javax.swing.JFrame {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-    private void affectSelected(boolean subscribe) {
+    private void affectSelected() {
         List<Comm> comms = new LinkedList<Comm>();
         TreePath[] selected = treeNodes.getSelectionPaths();
         if (selected == null) {
@@ -259,30 +257,18 @@ public class CommsFrame extends javax.swing.JFrame {
                 }
             }
         }
-        if (subscribe) {
-            subscribeOut.write(comms);
-        } else {
-            pokeOut.write(comms);
-        }
+        subscribeOut.write(comms);
     }
 
     private void treeNodesMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_treeNodesMouseClicked
         if (evt.getClickCount() >= 2) {
-            if (evt.isControlDown()) {
-                affectSelected(true);
-            } else {
-                affectSelected(false);
-            }
+            affectSelected();
         }
     }//GEN-LAST:event_treeNodesMouseClicked
 
     private void treeNodesKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_treeNodesKeyPressed
         if (evt.getKeyCode() == KeyEvent.VK_ENTER) {
-            if (evt.isControlDown()) {
-                affectSelected(true);
-            } else {
-                affectSelected(false);
-            }
+            affectSelected();
         }
     }//GEN-LAST:event_treeNodesKeyPressed
 
