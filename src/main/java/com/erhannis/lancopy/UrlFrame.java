@@ -25,7 +25,9 @@ public class UrlFrame extends javax.swing.JFrame {
         for (Comm comm : localAd.comms) {
             if (comm instanceof TcpComm) {
                 TcpComm tc = (TcpComm) comm;
-                sb.append(new HttpUrl.Builder().scheme("http").host(tc.host).port(tc.port).addPathSegments("data").build().toString() + "\n");
+                String hostport = new HttpUrl.Builder().scheme("http").host(tc.host).port(tc.port).build().toString().substring("http://".length());
+                hostport = hostport.substring(0, hostport.length()-1);
+                sb.append(hostport + "\n");
             }
         }
         taUrls.setText(sb.toString());

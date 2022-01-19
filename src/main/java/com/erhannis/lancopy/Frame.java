@@ -15,11 +15,13 @@ import com.erhannis.lancopy.refactor.Advertisement;
 import com.erhannis.lancopy.refactor.Comm;
 import com.erhannis.lancopy.refactor.LanCopyNet;
 import com.erhannis.lancopy.refactor.Summary;
+import com.erhannis.lancopy.refactor.tcp.TcpComm;
 import com.erhannis.mathnstuff.MeUtils;
 import com.erhannis.mathnstuff.Pair;
 import com.erhannis.mathnstuff.components.OptionsFrame;
 import com.erhannis.mathnstuff.components.ProgressDialog;
 import com.erhannis.mathnstuff.utils.Options;
+import com.google.common.collect.Lists;
 import com.martiansoftware.jsap.JSAP;
 import com.martiansoftware.jsap.JSAPException;
 import com.martiansoftware.jsap.JSAPResult;
@@ -41,6 +43,7 @@ import java.awt.event.WindowListener;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -722,9 +725,26 @@ public class Frame extends javax.swing.JFrame {
     }//GEN-LAST:event_miManualUrlsActionPerformed
 
     private void miPullRosterActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_miPullRosterActionPerformed
-        String url = JOptionPane.showInputDialog("Enter URL (e.g. http://192.168.1.99:12345/get/roster)");
-        if (url != null) {
-            uii.getRosterOut.write(url);
+        String url = JOptionPane.showInputDialog("Enter address and port (e.g. 192.168.1.99:12345)");
+        if (url == null) {
+            return;
+        }
+
+        try { // https://stackoverflow.com/a/2347356/513038
+            // WORKAROUND: add any scheme to make the resulting URI valid.
+            URI uri = new URI("my://" + url); // may throw URISyntaxException
+            String host = uri.getHost();
+            int port = uri.getPort();
+
+            if (uri.getHost() == null || uri.getPort() == -1) {
+                throw new URISyntaxException(uri.toString(), "URI must have host and port parts");
+            }
+
+            List<Comm> lComms = Lists.newArrayList(new TcpComm(null, host, port));
+            Advertisement lad = new Advertisement(null, System.currentTimeMillis(), lComms, true, null);
+            uii.subscribeOut.write(lad.comms);
+        } catch (URISyntaxException ex) {
+            System.err.println("Failed to validate host:port : " + url);
         }
     }//GEN-LAST:event_miPullRosterActionPerformed
 

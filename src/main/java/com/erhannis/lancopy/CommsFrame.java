@@ -173,7 +173,15 @@ public class CommsFrame extends javax.swing.JFrame {
                 DefaultMutableTreeNode typeNode = typeNodes.get(comm.type);
                 if (typeNode == null) {
                     typeNode = new DefaultMutableTreeNode(comm.type);
-                    id2adNode.get(comm.owner.id).add(typeNode);
+                    DefaultMutableTreeNode adNode = id2adNode.get(comm.owner.id);
+                    if (adNode == null) {
+                        System.err.println("CommsFrame jimmying in adNode");
+                        update(comm.owner);
+                        update(commStatus);
+                        return;
+                    } else {
+                        adNode.add(typeNode);
+                    }
                     typeNodes.put(comm.type, typeNode);
                 }
 
