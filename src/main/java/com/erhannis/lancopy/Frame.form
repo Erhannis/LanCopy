@@ -70,12 +70,12 @@
                 <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="miManualUrlsActionPerformed"/>
               </Events>
             </MenuItem>
-            <MenuItem class="javax.swing.JMenuItem" name="miPullRoster">
+            <MenuItem class="javax.swing.JMenuItem" name="miManualConnect">
               <Properties>
-                <Property name="text" type="java.lang.String" value="Pull roster..."/>
+                <Property name="text" type="java.lang.String" value="Manual connect..."/>
               </Properties>
               <Events>
-                <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="miPullRosterActionPerformed"/>
+                <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="miManualConnectActionPerformed"/>
               </Events>
             </MenuItem>
           </SubComponents>

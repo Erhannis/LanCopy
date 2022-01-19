@@ -389,7 +389,7 @@ public class Frame extends javax.swing.JFrame {
         miOptions = new javax.swing.JMenuItem();
         miComms = new javax.swing.JMenuItem();
         miManualUrls = new javax.swing.JMenuItem();
-        miPullRoster = new javax.swing.JMenuItem();
+        miManualConnect = new javax.swing.JMenuItem();
         jMenu3 = new javax.swing.JMenu();
         miAbout = new javax.swing.JMenuItem();
 
@@ -542,7 +542,7 @@ public class Frame extends javax.swing.JFrame {
 
         jMenu1.setText("Actions");
 
-        miPostClipboard.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_V, java.awt.event.InputEvent.CTRL_MASK));
+        miPostClipboard.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_V, java.awt.event.InputEvent.CTRL_DOWN_MASK));
         miPostClipboard.setText("Post clipboard");
         miPostClipboard.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -551,7 +551,7 @@ public class Frame extends javax.swing.JFrame {
         });
         jMenu1.add(miPostClipboard);
 
-        miPostFiles.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_O, java.awt.event.InputEvent.CTRL_MASK));
+        miPostFiles.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_O, java.awt.event.InputEvent.CTRL_DOWN_MASK));
         miPostFiles.setText("Post files...");
         miPostFiles.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -596,13 +596,13 @@ public class Frame extends javax.swing.JFrame {
         });
         jMenu2.add(miManualUrls);
 
-        miPullRoster.setText("Pull roster...");
-        miPullRoster.addActionListener(new java.awt.event.ActionListener() {
+        miManualConnect.setText("Manual connect...");
+        miManualConnect.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                miPullRosterActionPerformed(evt);
+                miManualConnectActionPerformed(evt);
             }
         });
-        jMenu2.add(miPullRoster);
+        jMenu2.add(miManualConnect);
 
         jMenuBar1.add(jMenu2);
 
@@ -732,7 +732,7 @@ public class Frame extends javax.swing.JFrame {
         new UrlFrame(uii.adCall.call(dataOwner.ID)).setVisible(true);
     }//GEN-LAST:event_miManualUrlsActionPerformed
 
-    private void miPullRosterActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_miPullRosterActionPerformed
+    private void miManualConnectActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_miManualConnectActionPerformed
         String url = JOptionPane.showInputDialog("Enter address and port (e.g. 192.168.1.99:12345)");
         if (url == null) {
             return;
@@ -754,7 +754,7 @@ public class Frame extends javax.swing.JFrame {
         } catch (URISyntaxException ex) {
             System.err.println("Failed to validate host:port : " + url);
         }
-    }//GEN-LAST:event_miPullRosterActionPerformed
+    }//GEN-LAST:event_miManualConnectActionPerformed
 
     private void miPostLanCopyActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_miPostLanCopyActionPerformed
         try {
@@ -987,12 +987,12 @@ public class Frame extends javax.swing.JFrame {
     private javax.swing.JList<NodeLine> listServices;
     private javax.swing.JMenuItem miAbout;
     private javax.swing.JMenuItem miComms;
+    private javax.swing.JMenuItem miManualConnect;
     private javax.swing.JMenuItem miManualUrls;
     private javax.swing.JMenuItem miOptions;
     private javax.swing.JMenuItem miPostClipboard;
     private javax.swing.JMenuItem miPostFiles;
     private javax.swing.JMenuItem miPostLanCopy;
-    private javax.swing.JMenuItem miPullRoster;
     private javax.swing.JTextArea taLoadedData;
     private javax.swing.JTextArea taPostedData;
     // End of variables declaration//GEN-END:variables
