@@ -19,15 +19,24 @@ public class UrlFrame extends javax.swing.JFrame {
     /**
      * Creates new form UrlFrame
      */
-    public UrlFrame(Advertisement localAd) {
+    public UrlFrame(DataOwner dataOwner, Advertisement localAd) {
         initComponents();
+        
+        boolean plainHttpEnabled = (Boolean) dataOwner.options.getOrDefault("Comms.tcp.unauth_http.enabled", false);
+        int plainHttpPort = (int) dataOwner.options.getOrDefault("Comms.tcp.unauth_http.port", 12111);
+        
         StringBuilder sb = new StringBuilder();
+        
+        if (!plainHttpEnabled) {
+            sb.append("(Plain http disabled; see Comms.tcp.unauth_http.enabled)\n");
+            sb.append("(The following would be urls for it.)\n");
+        }
+        
         for (Comm comm : localAd.comms) {
             if (comm instanceof TcpComm) {
                 TcpComm tc = (TcpComm) comm;
-                String hostport = new HttpUrl.Builder().scheme("http").host(tc.host).port(tc.port).build().toString().substring("http://".length());
-                hostport = hostport.substring(0, hostport.length()-1);
-                sb.append(hostport + "\n");
+                String url = new HttpUrl.Builder().scheme(dataOwner.encrypted ? "https" : "http").host(tc.host).port(plainHttpPort).build().toString();
+                sb.append(url + "\n");
             }
         }
         taUrls.setText(sb.toString());

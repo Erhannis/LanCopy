@@ -118,7 +118,7 @@ public class Frame extends javax.swing.JFrame {
         }
 
         new ProcessManager(() -> {
-            Alternative alt = new Alternative(new Guard[]{uii.adIn, uii.commStatusIn, uii.summaryIn, uii.showLocalFingerprintIn});
+            Alternative alt = new Alternative(new Guard[]{uii.adIn, uii.commStatusIn, uii.summaryIn, uii.confirmationServer, uii.showLocalFingerprintIn});
             HashMap<UUID, Summary> summarys = new HashMap<>();
             List<Advertisement> roster = uii.rosterCall.call(null);
             for (Advertisement ad : roster) {
@@ -170,7 +170,18 @@ public class Frame extends javax.swing.JFrame {
                         summarys.put(summary.id, summary);
                         break;
                     }
-                    case 3: { // showLocalFingerprintIn
+                    case 3: { // uii.confirmationServer
+                        String msg = uii.confirmationServer.startRead();
+                        boolean result = false;
+                        if (JOptionPane.showConfirmDialog(null, msg, "Confirmation", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE) == JOptionPane.YES_OPTION) {
+                            result = true;
+                        } else {
+                            result = false;
+                        }
+                        uii.confirmationServer.endRead(result);
+                        break;
+                    }
+                    case 4: { // showLocalFingerprintIn
                         uii.showLocalFingerprintIn.read();
                         boolean show = (boolean) uii.dataOwner.options.getOrDefault("TLS.SHOW_LOCAL_FINGERPRINT", true);
                         if (show) {
@@ -729,7 +740,7 @@ public class Frame extends javax.swing.JFrame {
     }//GEN-LAST:event_miCommsActionPerformed
 
     private void miManualUrlsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_miManualUrlsActionPerformed
-        new UrlFrame(uii.adCall.call(dataOwner.ID)).setVisible(true);
+        new UrlFrame(dataOwner, uii.adCall.call(dataOwner.ID)).setVisible(true);
     }//GEN-LAST:event_miManualUrlsActionPerformed
 
     private void miManualConnectActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_miManualConnectActionPerformed
