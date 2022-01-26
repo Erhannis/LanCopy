@@ -62,9 +62,15 @@ import javax.swing.DefaultListModel;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
+import jcsp.helpers.JcspUtils;
 import jcsp.lang.Alternative;
+import jcsp.lang.AltingChannelInputInt;
+import jcsp.lang.Any2OneChannelInt;
+import jcsp.lang.Channel;
+import jcsp.lang.ChannelOutputInt;
 import jcsp.lang.Guard;
 import jcsp.lang.ProcessManager;
+import jcsp.util.ints.OverWriteOldestBufferInt;
 import org.apache.commons.io.FileUtils;
 
 /**
@@ -95,7 +101,7 @@ public class Frame extends javax.swing.JFrame {
     /**
      * Creates new form Frame
      */
-    public Frame(LanCopyNet.UiInterface uii, Data initialData) {
+    public Frame(LanCopyNet.UiInterface uii, Data initialData, AltingChannelInputInt showLocalFingerprintIn) {
         initComponents();
         this.dataOwner = uii.dataOwner;
         this.uii = uii;
@@ -118,7 +124,7 @@ public class Frame extends javax.swing.JFrame {
         }
 
         new ProcessManager(() -> {
-            Alternative alt = new Alternative(new Guard[]{uii.adIn, uii.commStatusIn, uii.summaryIn, uii.confirmationServer, uii.showLocalFingerprintIn});
+            Alternative alt = new Alternative(new Guard[]{uii.adIn, uii.commStatusIn, uii.summaryIn, uii.confirmationServer, showLocalFingerprintIn});
             HashMap<UUID, Summary> summarys = new HashMap<>();
             List<Advertisement> roster = uii.rosterCall.call(null);
             for (Advertisement ad : roster) {
@@ -182,7 +188,7 @@ public class Frame extends javax.swing.JFrame {
                         break;
                     }
                     case 4: { // showLocalFingerprintIn
-                        uii.showLocalFingerprintIn.read();
+                        showLocalFingerprintIn.read();
                         boolean show = (boolean) uii.dataOwner.options.getOrDefault("TLS.SHOW_LOCAL_FINGERPRINT", true);
                         if (show) {
                             JOptionPane.showMessageDialog(null, "An incoming connection has paused, presumably for fingerprint verification.\nThe local TLS fingerprint is:\n" + uii.dataOwner.tlsContext.sha256Fingerprint, "Security: Local fingerprint", JOptionPane.INFORMATION_MESSAGE);
@@ -904,7 +910,11 @@ public class Frame extends javax.swing.JFrame {
 
         LanCopyNet.UiInterface[] uii0 = new LanCopyNet.UiInterface[1];
         
-        final LanCopyNet.UiInterface uii = LanCopyNet.startNet((msg) -> {
+        Any2OneChannelInt showLocalFingerprintChannel = Channel.any2oneInt(new OverWriteOldestBufferInt(1));
+        AltingChannelInputInt showLocalFingerprintIn = showLocalFingerprintChannel.in();
+        ChannelOutputInt showLocalFingerprintOut = JcspUtils.logDeadlock(showLocalFingerprintChannel.out());
+        
+        final DataOwner dataOwner = new DataOwner(OptionsFrame.DEFAULT_OPTIONS_FILENAME, showLocalFingerprintOut, (msg) -> {
             String localFingerprint = "UNKNOWN";
             LanCopyNet.UiInterface luii = uii0[0];
             if (luii != null) {
@@ -917,6 +927,8 @@ public class Frame extends javax.swing.JFrame {
                 return false;
             }
         });
+        
+        final LanCopyNet.UiInterface uii = LanCopyNet.startNet(dataOwner, showLocalFingerprintOut);
         uii0[0] = uii;
 
         final Data data;
@@ -971,7 +983,7 @@ public class Frame extends javax.swing.JFrame {
         /* Create and display the form */
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
-                new Frame(uii, data).setVisible(true);
+                new Frame(uii, data, showLocalFingerprintIn).setVisible(true);
             }
         });
     }
