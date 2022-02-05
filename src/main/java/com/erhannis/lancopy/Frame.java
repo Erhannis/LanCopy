@@ -16,8 +16,6 @@ import com.erhannis.lancopy.refactor.Comm;
 import com.erhannis.lancopy.refactor.LanCopyNet;
 import com.erhannis.lancopy.refactor.Summary;
 import com.erhannis.lancopy.refactor.tcp.TcpComm;
-import com.erhannis.lancopy.refactor2.qr.QRComm;
-import com.erhannis.lancopy.refactor2.qr.QRCommFrame;
 import com.erhannis.mathnstuff.MeUtils;
 import com.erhannis.mathnstuff.Pair;
 import com.erhannis.mathnstuff.components.OptionsFrame;
@@ -796,12 +794,8 @@ public class Frame extends javax.swing.JFrame {
     }//GEN-LAST:event_miPostLanCopyActionPerformed
 
     private void miQrChannelActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_miQrChannelActionPerformed
-        QRComm qc = new QRComm(null);
+        SwingQRComm qc = new SwingQRComm(null);
         uii.subscribeOut.write(Arrays.asList(qc));
-        
-//        QRCommFrame qcf = new QRCommFrame(dataOwner, new QRComm(uii.adCall.call(dataOwner.ID)));
-//        qcf.setVisible(true);
-//        uii.enrollCommChannelOut.write(qcf.channel);
     }//GEN-LAST:event_miQrChannelActionPerformed
     
     private void pullFromNode() {
