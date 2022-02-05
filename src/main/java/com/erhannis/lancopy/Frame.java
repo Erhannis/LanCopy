@@ -16,6 +16,8 @@ import com.erhannis.lancopy.refactor.Comm;
 import com.erhannis.lancopy.refactor.LanCopyNet;
 import com.erhannis.lancopy.refactor.Summary;
 import com.erhannis.lancopy.refactor.tcp.TcpComm;
+import com.erhannis.lancopy.refactor2.qr.QRComm;
+import com.erhannis.lancopy.refactor2.qr.QRCommFrame;
 import com.erhannis.mathnstuff.MeUtils;
 import com.erhannis.mathnstuff.Pair;
 import com.erhannis.mathnstuff.components.OptionsFrame;
@@ -96,6 +98,10 @@ public class Frame extends javax.swing.JFrame {
      * Creates new form Frame
      */
     public Frame(LanCopyNet.UiInterface uii, Data initialData) {
+        //List<Comm> lComms = Lists.newArrayList(new QRComm(null));
+        //dummyAd = new Advertisement(new UUID(0, 0), System.currentTimeMillis(), lComms, true, null);
+
+        
         initComponents();
         this.dataOwner = uii.dataOwner;
         this.uii = uii;
@@ -401,6 +407,7 @@ public class Frame extends javax.swing.JFrame {
         miComms = new javax.swing.JMenuItem();
         miManualUrls = new javax.swing.JMenuItem();
         miManualConnect = new javax.swing.JMenuItem();
+        miQrChannel = new javax.swing.JMenuItem();
         jMenu3 = new javax.swing.JMenu();
         miAbout = new javax.swing.JMenuItem();
 
@@ -583,6 +590,7 @@ public class Frame extends javax.swing.JFrame {
 
         jMenu2.setText("Windows");
 
+        miOptions.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_O, java.awt.event.InputEvent.ALT_DOWN_MASK));
         miOptions.setText("Options...");
         miOptions.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -591,6 +599,7 @@ public class Frame extends javax.swing.JFrame {
         });
         jMenu2.add(miOptions);
 
+        miComms.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_C, java.awt.event.InputEvent.ALT_DOWN_MASK));
         miComms.setText("Comms...");
         miComms.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -599,6 +608,7 @@ public class Frame extends javax.swing.JFrame {
         });
         jMenu2.add(miComms);
 
+        miManualUrls.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_U, java.awt.event.InputEvent.ALT_DOWN_MASK));
         miManualUrls.setText("Manual urls...");
         miManualUrls.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -607,6 +617,7 @@ public class Frame extends javax.swing.JFrame {
         });
         jMenu2.add(miManualUrls);
 
+        miManualConnect.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_M, java.awt.event.InputEvent.ALT_DOWN_MASK));
         miManualConnect.setText("Manual connect...");
         miManualConnect.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -614,6 +625,15 @@ public class Frame extends javax.swing.JFrame {
             }
         });
         jMenu2.add(miManualConnect);
+
+        miQrChannel.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_Q, java.awt.event.InputEvent.ALT_DOWN_MASK));
+        miQrChannel.setText("QR channel...");
+        miQrChannel.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                miQrChannelActionPerformed(evt);
+            }
+        });
+        jMenu2.add(miQrChannel);
 
         jMenuBar1.add(jMenu2);
 
@@ -774,102 +794,113 @@ public class Frame extends javax.swing.JFrame {
             Logger.getLogger(Frame.class.getName()).log(Level.SEVERE, null, ex);
         }
     }//GEN-LAST:event_miPostLanCopyActionPerformed
+
+    private void miQrChannelActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_miQrChannelActionPerformed
+        QRComm qc = new QRComm(null);
+        uii.subscribeOut.write(Arrays.asList(qc));
+        
+//        QRCommFrame qcf = new QRCommFrame(dataOwner, new QRComm(uii.adCall.call(dataOwner.ID)));
+//        qcf.setVisible(true);
+//        uii.enrollCommChannelOut.write(qcf.channel);
+    }//GEN-LAST:event_miQrChannelActionPerformed
     
     private void pullFromNode() {
         NodeLine nl = listServices.getSelectedValue();
         if (nl != null) {
             ProgressDialog pd = new ProgressDialog(this, false, "Pulling data...", "Hang on");
-            try {
-                //TODO This is not airtight; drag-n-drop still works, for instance
-                this.setEnabled(false);
-                pd.setVisible(true);
-                Pair<String, InputStream> result = uii.dataCall.call(nl.summary.id);
-                try { //[finally close stream]
-                    Data data;
-                    if (result == null) {
-                        data = new ErrorData("Node could not be reached");
-                    } else {
-                        switch (result.a) {
-                            case "text/plain":
-                                data = TextData.deserialize(result.b);
-                                break;
-                            case "application/octet-stream":
-                                data = BinaryData.deserialize(result.b);
-                                break;
-                            case "lancopy/files":
-                                data = FilesData.deserialize(result.b, filename -> {
-                                    File f = new File(filename);
-                                    fileSaveChooser.setSelectedFile(f);
-                                    if (fileSaveChooser.showSaveDialog(null) == JFileChooser.APPROVE_OPTION) {
-                                      return fileSaveChooser.getSelectedFile();
-                                    } else {
-                                      return null;
-                                    }
-                                });
-                                break;
-                            case "lancopy/nodata":
-                                data = NoData.deserialize(result.b);
-                                break;
-                            default:
-                                data = new ErrorData("Unhandled MIME: " + result.a);
-                                break;
+            this.setEnabled(false);
+            pd.setVisible(true);
+            new ProcessManager(() -> {
+                try {
+                    //TODO This is not airtight; drag-n-drop still works, for instance
+                    Pair<String, InputStream> result = uii.dataCall.call(nl.summary.id);
+                    try { //[finally close stream]
+                        Data data;
+                        if (result == null) {
+                            data = new ErrorData("Node could not be reached");
+                        } else {
+                            switch (result.a) {
+                                case "text/plain":
+                                    data = TextData.deserialize(result.b);
+                                    break;
+                                case "application/octet-stream":
+                                    data = BinaryData.deserialize(result.b);
+                                    break;
+                                case "lancopy/files":
+                                    data = FilesData.deserialize(result.b, filename -> {
+                                        File f = new File(filename);
+                                        fileSaveChooser.setSelectedFile(f);
+                                        if (fileSaveChooser.showSaveDialog(null) == JFileChooser.APPROVE_OPTION) {
+                                          return fileSaveChooser.getSelectedFile();
+                                        } else {
+                                          return null;
+                                        }
+                                    });
+                                    break;
+                                case "lancopy/nodata":
+                                    data = NoData.deserialize(result.b);
+                                    break;
+                                default:
+                                    data = new ErrorData("Unhandled MIME: " + result.a);
+                                    break;
+                            }
                         }
-                    }
-                    //System.out.println("rx data: " + data);
-                    if (data instanceof TextData) {
-                        taLoadedData.setText(((TextData) data).text);
-                        Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(((TextData) data).text), null);
-                    } else if (data instanceof ErrorData) {
-                        taLoadedData.setText(((ErrorData) data).text);
-                        Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(((ErrorData) data).text), null);
-                    } else if (data instanceof BinaryData) {
-                        if (fileOpenChooser.showSaveDialog(null) == JFileChooser.APPROVE_OPTION) {
-                            File f = fileOpenChooser.getSelectedFile();
-                            System.out.println("--> copyInputStreamToFile");
-                            FileUtils.copyInputStreamToFile(((BinaryData) data).stream, f);
-                            System.out.println("<-- copyInputStreamToFile");
-                            ((BinaryData) data).stream.close();
-                            taLoadedData.setText(((BinaryData) data).toString());
+                        //System.out.println("rx data: " + data);
+                        if (data instanceof TextData) {
+                            taLoadedData.setText(((TextData) data).text);
+                            Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(((TextData) data).text), null);
+                        } else if (data instanceof ErrorData) {
+                            taLoadedData.setText(((ErrorData) data).text);
+                            Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(((ErrorData) data).text), null);
+                        } else if (data instanceof BinaryData) {
+                            if (fileOpenChooser.showSaveDialog(null) == JFileChooser.APPROVE_OPTION) {
+                                File f = fileOpenChooser.getSelectedFile();
+                                System.out.println("--> copyInputStreamToFile");
+                                FileUtils.copyInputStreamToFile(((BinaryData) data).stream, f);
+                                System.out.println("<-- copyInputStreamToFile");
+                                ((BinaryData) data).stream.close();
+                                taLoadedData.setText(((BinaryData) data).toString());
+                                try {
+                                    Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(f.getParentFile().getAbsolutePath()), null);
+                                } catch (Throwable t) {
+                                    // Nevermind
+                                }
+                            } else {
+                                throw new RuntimeException("File save canceled");
+                            }
+                        } else if (data instanceof FilesData) {
+                            FilesData fd = ((FilesData) data);
+                            taLoadedData.setText(fd.toLongString());
                             try {
-                                Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(f.getParentFile().getAbsolutePath()), null);
+                                Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(fd.files[0].getParentFile().getAbsolutePath()), null);
                             } catch (Throwable t) {
                                 // Nevermind
                             }
+                            //System.err.println("//TODO Save files");
+                        } else if (data instanceof NoData) {
+                            taLoadedData.setText(((NoData) data).toString());
+                            Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(((NoData) data).toString()), null);
                         } else {
-                            throw new RuntimeException("File save canceled");
+                            throw new RuntimeException("Unhandled data type");
                         }
-                    } else if (data instanceof FilesData) {
-                        FilesData fd = ((FilesData) data);
-                        taLoadedData.setText(fd.toLongString());
+                    } finally {
                         try {
-                            Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(fd.files[0].getParentFile().getAbsolutePath()), null);
+                            result.b.close();
                         } catch (Throwable t) {
-                            // Nevermind
+                            t.printStackTrace();
                         }
-                        //System.err.println("//TODO Save files");
-                    } else if (data instanceof NoData) {
-                        taLoadedData.setText(((NoData) data).toString());
-                        Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(((NoData) data).toString()), null);
-                    } else {
-                        throw new RuntimeException("Unhandled data type");
                     }
+                } catch (IOException ex) {
+                    Logger.getLogger(Frame.class.getName()).log(Level.SEVERE, null, ex);
+                    taLoadedData.setText("ERROR: " + ex.getMessage());
                 } finally {
-                    try {
-                        result.b.close();
-                    } catch (Throwable t) {
-                        t.printStackTrace();
+                    if (pd != null) {
+                        pd.setVisible(false);
+                        pd.dispose();
+                        Frame.this.setEnabled(true);
                     }
                 }
-            } catch (IOException ex) {
-                Logger.getLogger(Frame.class.getName()).log(Level.SEVERE, null, ex);
-                taLoadedData.setText("ERROR: " + ex.getMessage());
-            } finally {
-                if (pd != null) {
-                    pd.setVisible(false);
-                    pd.dispose();
-                    this.setEnabled(true);
-                }
-            }
+            }).start();
         }
     }
 
@@ -1004,6 +1035,7 @@ public class Frame extends javax.swing.JFrame {
     private javax.swing.JMenuItem miPostClipboard;
     private javax.swing.JMenuItem miPostFiles;
     private javax.swing.JMenuItem miPostLanCopy;
+    private javax.swing.JMenuItem miQrChannel;
     private javax.swing.JTextArea taLoadedData;
     private javax.swing.JTextArea taPostedData;
     // End of variables declaration//GEN-END:variables
