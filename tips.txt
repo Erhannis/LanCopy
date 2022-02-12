@@ -1,0 +1,21 @@
+If you're having connection problems, here's some things to try.
+
+If the other node is not showing up:
+  Double check that the advertisement ports haven't been changed
+  Check the logs for deserialization errors
+  Double check they're on the same network; try pinging the other computer
+  On one computer (the one with visible ports / less firewall, if possible), open Comms and find a good local address and port
+    (The local node is usually the one with all green comms)
+    usually 192.168.1.X:Y
+    On the other computer, Windows > Manual connect... ; enter X:Y
+    Hopefully that gets them to connect.
+    At some point I may add the ability for them both to cooperate in overcoming firewalls on both sides, but haven't yet.
+  Windows > QR channel... on both computers, and point their webcams at each others' screens, to exchange Ads and either connect via other means, or transfer the data directly over QR.  (Warning, it's like 1 KB/s.)
+  Check the logs for a crashed Process
+
+If the other node IS showing up, but isn't actually connecting:
+  Double check both nodes have the same:
+    encryption
+    encryption protocol
+    version (check the logs for deserialization errors and stuff)
+  Check the logs for a crashed Process  
