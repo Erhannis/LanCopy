@@ -37,9 +37,19 @@
       </plugin>
     </plugins>
   </build>
+  <repositories>
+    <repository>
+      <id>Sonatype OSS Snapshot Repository</id>
+      <url>http://oss.sonatype.org/content/repositories/snapshots</url>
+    </repository>
+    <repository>
+      <id>mavenCentral()</id>
+      <url>https://maven.ecs.soton.ac.uk/content/groups/maven.openimaj.org/</url>
+    </repository>
+  </repositories>
   <properties>
+    <maven.compiler.target>8</maven.compiler.target>
     <maven.compiler.source>8</maven.compiler.source>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <maven.compiler.target>8</maven.compiler.target>
   </properties>
 </project>
