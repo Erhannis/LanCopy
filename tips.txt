@@ -1,6 +1,7 @@
 If you're having connection problems, here's some things to try.
 
 If the other node is not showing up:
+  Turn on Comms.broadcast.tcp.localscan.enabled on both nodes, wait for a rebroadcast.  Whether it works, I recommend disabling it afterwards - it opens 256 connections per 192.168.* address your computer has, on every rebroadcast.
   Double check that the advertisement ports haven't been changed
   Check the logs for deserialization errors
   Double check they're on the same network; try pinging the other computer
