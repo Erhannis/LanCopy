@@ -8,7 +8,10 @@ package com.erhannis.lancopy;
 import com.erhannis.lancopy.refactor.Advertisement;
 import com.erhannis.lancopy.refactor.Comm;
 import com.erhannis.lancopy.refactor.tcp.TcpComm;
-import okhttp3.HttpUrl;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -34,9 +37,13 @@ public class UrlFrame extends javax.swing.JFrame {
         
         for (Comm comm : localAd.comms) {
             if (comm instanceof TcpComm) {
-                TcpComm tc = (TcpComm) comm;
-                String url = new HttpUrl.Builder().scheme(dataOwner.encrypted ? "https" : "http").host(tc.host).port(plainHttpPort).build().toString();
-                sb.append(url + "\n");
+                try {
+                    TcpComm tc = (TcpComm) comm;
+                    String url = new URL(dataOwner.encrypted ? "https" : "http", tc.host, plainHttpPort, "").toString();
+                    sb.append(url + "\n");
+                } catch (MalformedURLException ex) {
+                    Logger.getLogger(UrlFrame.class.getName()).log(Level.SEVERE, null, ex);
+                }
             }
         }
         taUrls.setText(sb.toString());
