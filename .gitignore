@@ -5,6 +5,7 @@ target/
 **~
 /settings.xml
 /options.dat
+/dependency-reduced-pom.xml
 *.ks
 *.ts
 \#*\#
