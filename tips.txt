@@ -15,6 +15,7 @@ If the other node is not showing up:
   Check the logs for a crashed Process
 
 If the other node IS showing up, but isn't actually connecting:
+  Check the Comms window - if any of the lines are grey, it COULD be stuck waiting for a connection to timeout.  Wait for 30-60 seconds.
   Double check both nodes have the same:
     encryption
     encryption protocol
