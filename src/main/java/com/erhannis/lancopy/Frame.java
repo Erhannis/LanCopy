@@ -38,6 +38,7 @@ import java.awt.dnd.DnDConstants;
 import java.awt.dnd.DropTarget;
 import java.awt.dnd.DropTargetDragEvent;
 import java.awt.dnd.DropTargetDropEvent;
+import java.awt.event.KeyEvent;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.io.File;
@@ -524,10 +525,15 @@ public class Frame extends javax.swing.JFrame {
         jSplitPane3.setRightComponent(jPanel3);
 
         listServices.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
-        listServices.setToolTipText("Double click to copy from highlighted node");
+        listServices.setToolTipText("Double click (or ctrl+enter) to copy from highlighted node");
         listServices.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
                 listServicesMouseClicked(evt);
+            }
+        });
+        listServices.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                listServicesKeyPressed(evt);
             }
         });
         jScrollPane1.setViewportView(listServices);
@@ -803,6 +809,12 @@ public class Frame extends javax.swing.JFrame {
         SwingQRComm qc = new SwingQRComm(null);
         uii.subscribeOut.write(Arrays.asList(qc));
     }//GEN-LAST:event_miQrChannelActionPerformed
+
+    private void listServicesKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_listServicesKeyPressed
+        if (evt.getKeyCode() == KeyEvent.VK_ENTER && evt.isControlDown()) {
+            pullFromNode();
+        }
+    }//GEN-LAST:event_listServicesKeyPressed
     
     private void pullFromNode() {
         NodeLine nl = listServices.getSelectedValue();

@@ -385,10 +385,11 @@
                           <StringArray count="0"/>
                         </Property>
                         <Property name="selectionMode" type="int" value="0"/>
-                        <Property name="toolTipText" type="java.lang.String" value="Double click to copy from highlighted node"/>
+                        <Property name="toolTipText" type="java.lang.String" value="Double click (or ctrl+enter) to copy from highlighted node"/>
                       </Properties>
                       <Events>
                         <EventHandler event="mouseClicked" listener="java.awt.event.MouseListener" parameters="java.awt.event.MouseEvent" handler="listServicesMouseClicked"/>
+                        <EventHandler event="keyPressed" listener="java.awt.event.KeyListener" parameters="java.awt.event.KeyEvent" handler="listServicesKeyPressed"/>
                       </Events>
                       <AuxValues>
                         <AuxValue name="JavaCodeGenerator_TypeParameters" type="java.lang.String" value="&lt;NodeLine&gt;"/>
