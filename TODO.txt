@@ -1,0 +1,5 @@
+manually add an ad
+color-code nodes
+summary limit
+bundle .apk?
+long-poll connections, for one-way channel support
