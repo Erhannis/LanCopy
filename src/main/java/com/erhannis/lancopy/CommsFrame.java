@@ -265,6 +265,7 @@ public class CommsFrame extends javax.swing.JFrame {
                 }
             }
         }
+        treeNodes.repaint();
         subscribeOut.write(comms);
     }
 

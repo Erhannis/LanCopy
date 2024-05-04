@@ -16,6 +16,8 @@ import com.erhannis.lancopy.refactor.Comm;
 import com.erhannis.lancopy.refactor.LanCopyNet;
 import com.erhannis.lancopy.refactor.Summary;
 import com.erhannis.lancopy.refactor.tcp.TcpComm;
+import com.erhannis.lancopy.refactor2.messages.local.NodeKeyedLocalMessage;
+import com.erhannis.lancopy.refactor2.messages.tunnel.TunnelRequestMessage;
 import com.erhannis.mathnstuff.MeUtils;
 import com.erhannis.mathnstuff.Pair;
 import com.erhannis.mathnstuff.components.OptionsFrame;
@@ -811,8 +813,10 @@ public class Frame extends javax.swing.JFrame {
     }//GEN-LAST:event_miQrChannelActionPerformed
 
     private void listServicesKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_listServicesKeyPressed
-        if (evt.getKeyCode() == KeyEvent.VK_ENTER && evt.isControlDown()) {
+        if (evt.getKeyCode() == KeyEvent.VK_ENTER && evt.getModifiers() == KeyEvent.CTRL_MASK) {
             pullFromNode();
+        } else if (evt.getKeyCode() == KeyEvent.VK_ENTER && evt.getModifiers() == (KeyEvent.CTRL_MASK | KeyEvent.SHIFT_MASK)) {
+            tunnelToNode();
         }
     }//GEN-LAST:event_listServicesKeyPressed
     
@@ -916,6 +920,27 @@ public class Frame extends javax.swing.JFrame {
         }
     }
 
+    private void tunnelToNode() {
+        NodeLine nl = listServices.getSelectedValue();
+        if (nl != null) {
+            try {
+                UUID localTunnelEndpointId = UUID.randomUUID(); //SHAME It's a little weird that the UI decides the uuid for the endpoint
+                TunnelRequestMessage.TunnelDirection tunnelDirection = TunnelRequestMessage.TunnelDirection.LISTEN_AT_TARGET; //DUMMY
+                int incomingPort = 18824; //DUMMY
+                String outgoingAddress = "localhost"; //DUMMY
+                int outgoingPort = 8000; //DUMMY
+                TunnelRequestMessage.TunnelProtocol protocol = TunnelRequestMessage.TunnelProtocol.TCP; //DUMMY
+                TunnelRequestMessage trm = new TunnelRequestMessage(localTunnelEndpointId, tunnelDirection, incomingPort, outgoingAddress, outgoingPort, protocol);
+                System.out.println("Requesting tunnel from "+nl.summary.id+": "+trm);
+                uii.localMessageOut.write(new NodeKeyedLocalMessage(nl.summary.id, trm));
+                //RAINY Have like, an actual UI to manage the tunnels and connections
+            } catch (Exception ex) {
+                Logger.getLogger(Frame.class.getName()).log(Level.SEVERE, null, ex);
+                taLoadedData.setText("ERROR: " + ex.getMessage());
+            }
+        }
+    }
+    
     /**
      * @param args the command line arguments
      */
