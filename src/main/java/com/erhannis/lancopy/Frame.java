@@ -527,7 +527,7 @@ public class Frame extends javax.swing.JFrame {
         jSplitPane3.setRightComponent(jPanel3);
 
         listServices.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
-        listServices.setToolTipText("Double click (or ctrl+enter) to copy from highlighted node");
+        listServices.setToolTipText("Double click (or ctrl+enter) to copy from highlighted node.  ctrl+shift+enter to initiate experimental, unstable, incompletely implemented tunnel/proxy.");
         listServices.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
                 listServicesMouseClicked(evt);
