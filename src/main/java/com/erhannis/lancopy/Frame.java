@@ -924,16 +924,36 @@ public class Frame extends javax.swing.JFrame {
         NodeLine nl = listServices.getSelectedValue();
         if (nl != null) {
             try {
-                UUID localTunnelEndpointId = UUID.randomUUID(); //SHAME It's a little weird that the UI decides the uuid for the endpoint
-                TunnelRequestMessage.TunnelDirection tunnelDirection = TunnelRequestMessage.TunnelDirection.LISTEN_AT_TARGET; //DUMMY
-                int incomingPort = 18824; //DUMMY
-                String outgoingAddress = "localhost"; //DUMMY
-                int outgoingPort = 8000; //DUMMY
-                TunnelRequestMessage.TunnelProtocol protocol = TunnelRequestMessage.TunnelProtocol.TCP; //DUMMY
-                TunnelRequestMessage trm = new TunnelRequestMessage(localTunnelEndpointId, tunnelDirection, incomingPort, outgoingAddress, outgoingPort, protocol);
-                System.out.println("Requesting tunnel from "+nl.summary.id+": "+trm);
-                uii.localMessageOut.write(new NodeKeyedLocalMessage(nl.summary.id, trm));
-                //RAINY Have like, an actual UI to manage the tunnels and connections
+                NewTunnelDialog ntd = new NewTunnelDialog(this, true);
+                ntd.setVisible(true);
+                if (ntd.selected) {
+                    UUID localTunnelEndpointId = UUID.randomUUID(); //SHAME It's a little weird that the UI decides the uuid for the endpoint
+                    TunnelRequestMessage.TunnelDirection tunnelDirection;
+                    if (ntd.rbListenAtTarget.isSelected()) {
+                        tunnelDirection = TunnelRequestMessage.TunnelDirection.LISTEN_AT_TARGET;
+                    } else if (ntd.rbTalkFromTarget.isSelected()) {
+                        tunnelDirection = TunnelRequestMessage.TunnelDirection.TALK_FROM_TARGET;
+                    } else {
+                        System.err.println("Weird, no tunnel direction selected");
+                        tunnelDirection = TunnelRequestMessage.TunnelDirection.TALK_FROM_TARGET;                        
+                    }
+                    int incomingPort = (Integer)ntd.spinIncomingPort.getValue();
+                    String outgoingAddress = ntd.tfOutgoingAddress.getText();
+                    int outgoingPort = (Integer)ntd.spinOutgoingPort.getValue();
+                    TunnelRequestMessage.TunnelProtocol protocol;
+                    if (ntd.rbTcp.isSelected()) {
+                        protocol = TunnelRequestMessage.TunnelProtocol.TCP;
+                    } else {
+                        System.err.println("Weird, no protocol selected");
+                        protocol = TunnelRequestMessage.TunnelProtocol.TCP;
+                    }
+                    TunnelRequestMessage trm = new TunnelRequestMessage(localTunnelEndpointId, tunnelDirection, incomingPort, outgoingAddress, outgoingPort, protocol);
+                    System.out.println("Requesting tunnel from "+nl.summary.id+": "+trm);
+                    uii.localMessageOut.write(new NodeKeyedLocalMessage(nl.summary.id, trm));
+                    //RAINY Have like, an actual UI to manage the tunnels and connections
+                } else {
+                    System.out.println("New tunnel dialog canceled");
+                }
             } catch (Exception ex) {
                 Logger.getLogger(Frame.class.getName()).log(Level.SEVERE, null, ex);
                 taLoadedData.setText("ERROR: " + ex.getMessage());
